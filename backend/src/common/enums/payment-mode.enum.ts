@@ -1,0 +1,9 @@
+export enum PaymentMode {
+  CASH = 'CASH',
+  CHEQUE = 'CHEQUE',
+  ONLINE_TRANSFER = 'ONLINE_TRANSFER',
+  BANK_DRAFT = 'BANK_DRAFT',
+  CREDIT_CARD = 'CREDIT_CARD',
+  DEBIT_CARD = 'DEBIT_CARD',
+}
+

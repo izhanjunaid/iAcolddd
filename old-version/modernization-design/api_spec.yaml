@@ -1,0 +1,1250 @@
+openapi: 3.0.3
+info:
+  title: Advance ERP API
+  description: |
+    Modern REST API for Advance ERP System
+    
+    ## Features
+    - JWT-based authentication with refresh tokens
+    - Role-based access control (RBAC)
+    - Pagination, filtering, and sorting
+    - Comprehensive error handling
+    - Audit trails for all operations
+    
+    ## Authentication
+    All endpoints (except `/auth/login`) require a Bearer token in the Authorization header:
+    ```
+    Authorization: Bearer <your_access_token>
+    ```
+    
+  version: 1.0.0
+  contact:
+    name: ERP Support
+    email: support@advanceerp.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://staging-api.advanceerp.com/api
+    description: Staging server
+  - url: https://api.advanceerp.com/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Accounts
+    description: Chart of Accounts management
+  - name: Vouchers
+    description: Journal, Payment, and Receipt vouchers
+  - name: GRN
+    description: Goods Receipt Notes
+  - name: GDN
+    description: Goods Delivery Notes
+  - name: Invoices
+    description: Billing and invoicing
+  - name: Products
+    description: Product management
+  - name: Warehouse
+    description: Warehouse and room management
+  - name: Reports
+    description: Financial and operational reports
+  - name: Dashboard
+    description: Dashboard metrics and widgets
+  - name: Users
+    description: User management
+  - name: Settings
+    description: System settings
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ============================================================================
+  # AUTHENTICATION
+  # ============================================================================
+  
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      description: Authenticate user and receive access/refresh tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: admin
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+                  expiresIn:
+                    type: integer
+                    example: 3600
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  expiresIn:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: User logout
+      responses:
+        '200':
+          description: Logout successful
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user profile
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  
+  # ============================================================================
+  # ACCOUNTS (CHART OF ACCOUNTS)
+  # ============================================================================
+  
+  /accounts:
+    get:
+      tags: [Accounts]
+      summary: List all accounts
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE]
+        - name: accountType
+          in: query
+          schema:
+            type: string
+            enum: [CONTROL, SUB_CONTROL, DETAIL]
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by code or name
+      responses:
+        '200':
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Account'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+    
+    post:
+      tags: [Accounts]
+      summary: Create new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccountDto'
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+  
+  /accounts/{id}:
+    get:
+      tags: [Accounts]
+      summary: Get account by ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Account details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    
+    patch:
+      tags: [Accounts]
+      summary: Update account
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAccountDto'
+      responses:
+        '200':
+          description: Account updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    
+    delete:
+      tags: [Accounts]
+      summary: Delete account
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Account deleted
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  
+  /accounts/tree:
+    get:
+      tags: [Accounts]
+      summary: Get account hierarchy tree
+      responses:
+        '200':
+          description: Account tree
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccountTree'
+  
+  /accounts/{id}/balance:
+    get:
+      tags: [Accounts]
+      summary: Get account balance
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+        - name: asOfDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Account balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountCode:
+                    type: string
+                  accountName:
+                    type: string
+                  openingBalance:
+                    type: number
+                  totalDebit:
+                    type: number
+                  totalCredit:
+                    type: number
+                  currentBalance:
+                    type: number
+  
+  # ============================================================================
+  # VOUCHERS
+  # ============================================================================
+  
+  /vouchers:
+    get:
+      tags: [Vouchers]
+      summary: List vouchers
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: voucherType
+          in: query
+          schema:
+            type: string
+            enum: [JOURNAL, PAYMENT, RECEIPT]
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: isPosted
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of vouchers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Voucher'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+    
+    post:
+      tags: [Vouchers]
+      summary: Create voucher
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVoucherDto'
+      responses:
+        '201':
+          description: Voucher created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+  
+  /vouchers/{id}:
+    get:
+      tags: [Vouchers]
+      summary: Get voucher by ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Voucher details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+    
+    patch:
+      tags: [Vouchers]
+      summary: Update voucher (only if not posted)
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVoucherDto'
+      responses:
+        '200':
+          description: Voucher updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+    
+    delete:
+      tags: [Vouchers]
+      summary: Delete voucher (only if not posted)
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Voucher deleted
+  
+  /vouchers/{id}/post:
+    post:
+      tags: [Vouchers]
+      summary: Post voucher
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Voucher posted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+  
+  /vouchers/{id}/unpost:
+    post:
+      tags: [Vouchers]
+      summary: Unpost voucher
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Voucher unposted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voucher'
+  
+  # ============================================================================
+  # GRN (GOODS RECEIPT NOTES)
+  # ============================================================================
+  
+  /grn:
+    get:
+      tags: [GRN]
+      summary: List GRNs
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: supplierId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of GRNs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GRN'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+    
+    post:
+      tags: [GRN]
+      summary: Create GRN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGRNDto'
+      responses:
+        '201':
+          description: GRN created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GRN'
+  
+  /grn/{id}:
+    get:
+      tags: [GRN]
+      summary: Get GRN by ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: GRN details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GRN'
+    
+    delete:
+      tags: [GRN]
+      summary: Delete GRN
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: GRN deleted
+  
+  # ============================================================================
+  # INVOICES
+  # ============================================================================
+  
+  /invoices:
+    get:
+      tags: [Invoices]
+      summary: List invoices
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: customerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: isPosted
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Invoice'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+    
+    post:
+      tags: [Invoices]
+      summary: Create invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvoiceDto'
+      responses:
+        '201':
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+  
+  /invoices/{id}:
+    get:
+      tags: [Invoices]
+      summary: Get invoice by ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Invoice details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+    
+    delete:
+      tags: [Invoices]
+      summary: Delete invoice
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '204':
+          description: Invoice deleted
+  
+  /invoices/{id}/post:
+    post:
+      tags: [Invoices]
+      summary: Post invoice
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Invoice posted
+  
+  /invoices/{id}/print:
+    get:
+      tags: [Invoices]
+      summary: Generate invoice PDF
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+  
+  # ============================================================================
+  # DASHBOARD
+  # ============================================================================
+  
+  /dashboard/metrics:
+    get:
+      tags: [Dashboard]
+      summary: Get dashboard metrics
+      responses:
+        '200':
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalInvoices:
+                    type: integer
+                  totalRevenue:
+                    type: number
+                  outstandingAmount:
+                    type: number
+                  todayGRNs:
+                    type: integer
+                  todayGDNs:
+                    type: integer
+                  currentStock:
+                    type: number
+                  lowStockItems:
+                    type: integer
+  
+  /dashboard/revenue-chart:
+    get:
+      tags: [Dashboard]
+      summary: Get revenue chart data
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter, year]
+            default: month
+      responses:
+        '200':
+          description: Revenue chart data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    date:
+                      type: string
+                      format: date
+                    revenue:
+                      type: number
+  
+  # ============================================================================
+  # REPORTS
+  # ============================================================================
+  
+  /reports/trial-balance:
+    post:
+      tags: [Reports]
+      summary: Generate trial balance report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [startDate, endDate]
+              properties:
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                format:
+                  type: string
+                  enum: [pdf, excel]
+                  default: pdf
+      responses:
+        '202':
+          description: Report generation started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  message:
+                    type: string
+  
+  /reports/ledger:
+    post:
+      tags: [Reports]
+      summary: Generate ledger report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountId, startDate, endDate]
+              properties:
+                accountId:
+                  type: string
+                  format: uuid
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                format:
+                  type: string
+                  enum: [pdf, excel]
+      responses:
+        '202':
+          description: Report generation started
+  
+  /reports/jobs/{jobId}:
+    get:
+      tags: [Reports]
+      summary: Get report job status
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  state:
+                    type: string
+                    enum: [waiting, active, completed, failed]
+                  progress:
+                    type: integer
+                  result:
+                    type: object
+                    properties:
+                      fileUrl:
+                        type: string
+
+# ============================================================================
+# COMPONENTS
+# ============================================================================
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+  
+  schemas:
+    # ========================================================================
+    # USER & AUTH
+    # ========================================================================
+    
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        fullName:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        lastLoginAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    
+    # ========================================================================
+    # ACCOUNTS
+    # ========================================================================
+    
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        parentAccountId:
+          type: string
+          format: uuid
+          nullable: true
+        accountType:
+          type: string
+          enum: [CONTROL, SUB_CONTROL, DETAIL]
+        nature:
+          type: string
+          enum: [DEBIT, CREDIT]
+        category:
+          type: string
+          enum: [ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE]
+        isActive:
+          type: boolean
+        openingBalance:
+          type: number
+        metadata:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    
+    AccountTree:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        accountType:
+          type: string
+        subAccounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountTree'
+    
+    CreateAccountDto:
+      type: object
+      required: [name, nature, category, accountType]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        parentAccountId:
+          type: string
+          format: uuid
+        accountType:
+          type: string
+          enum: [CONTROL, SUB_CONTROL, DETAIL]
+        nature:
+          type: string
+          enum: [DEBIT, CREDIT]
+        category:
+          type: string
+          enum: [ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE]
+        openingBalance:
+          type: number
+          default: 0
+        metadata:
+          type: object
+    
+    UpdateAccountDto:
+      type: object
+      properties:
+        name:
+          type: string
+        isActive:
+          type: boolean
+        metadata:
+          type: object
+    
+    # ========================================================================
+    # VOUCHERS
+    # ========================================================================
+    
+    Voucher:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        voucherNumber:
+          type: string
+        voucherType:
+          type: string
+          enum: [JOURNAL, PAYMENT, RECEIPT]
+        voucherDate:
+          type: string
+          format: date
+        description:
+          type: string
+        totalAmount:
+          type: number
+        isPosted:
+          type: boolean
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoucherDetail'
+        createdAt:
+          type: string
+          format: date-time
+    
+    VoucherDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        accountCode:
+          type: string
+        accountName:
+          type: string
+        description:
+          type: string
+        debitAmount:
+          type: number
+        creditAmount:
+          type: number
+        lineNumber:
+          type: integer
+    
+    CreateVoucherDto:
+      type: object
+      required: [voucherType, voucherDate, details]
+      properties:
+        voucherType:
+          type: string
+          enum: [JOURNAL, PAYMENT, RECEIPT]
+        voucherDate:
+          type: string
+          format: date
+        description:
+          type: string
+        details:
+          type: array
+          minItems: 2
+          items:
+            type: object
+            required: [accountCode, debitAmount, creditAmount]
+            properties:
+              accountCode:
+                type: string
+              description:
+                type: string
+              debitAmount:
+                type: number
+                minimum: 0
+              creditAmount:
+                type: number
+                minimum: 0
+    
+    UpdateVoucherDto:
+      type: object
+      properties:
+        description:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+    
+    # ========================================================================
+    # GRN
+    # ========================================================================
+    
+    GRN:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        grnNumber:
+          type: string
+        grnDate:
+          type: string
+          format: date
+        supplierAccount:
+          $ref: '#/components/schemas/Account'
+        vehicleNumber:
+          type: string
+        totalAmount:
+          type: number
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/GRNDetail'
+        createdAt:
+          type: string
+          format: date-time
+    
+    GRNDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product:
+          type: object
+        quantity:
+          type: number
+        rate:
+          type: number
+        amount:
+          type: number
+        room:
+          type: object
+        rack:
+          type: object
+    
+    CreateGRNDto:
+      type: object
+      required: [grnDate, supplierAccountId, details]
+      properties:
+        grnDate:
+          type: string
+          format: date
+        supplierAccountId:
+          type: string
+          format: uuid
+        vehicleNumber:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+    
+    # ========================================================================
+    # INVOICES
+    # ========================================================================
+    
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        invoiceNumber:
+          type: string
+        invoiceDate:
+          type: string
+          format: date
+        customerAccount:
+          $ref: '#/components/schemas/Account'
+        subtotal:
+          type: number
+        incomeTaxAmount:
+          type: number
+        totalAmount:
+          type: number
+        balance:
+          type: number
+        details:
+          type: array
+          items:
+            type: object
+        createdAt:
+          type: string
+          format: date-time
+    
+    CreateInvoiceDto:
+      type: object
+      required: [invoiceDate, customerAccountId, lines]
+      properties:
+        invoiceDate:
+          type: string
+          format: date
+        customerAccountId:
+          type: string
+          format: uuid
+        lines:
+          type: array
+          items:
+            type: object
+        incomeTaxPercent:
+          type: number
+        withholdingTaxPercent:
+          type: number
+    
+    # ========================================================================
+    # COMMON
+    # ========================================================================
+    
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+    
+    Error:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+        error:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+  
+  responses:
+    BadRequestError:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 400
+            message: Validation failed
+            error: Bad Request
+    
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 401
+            message: Invalid credentials
+            error: Unauthorized
+    
+    ForbiddenError:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 403
+            message: Insufficient permissions
+            error: Forbidden
+    
+    NotFoundError:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 404
+            message: Resource not found
+            error: Not Found
+
