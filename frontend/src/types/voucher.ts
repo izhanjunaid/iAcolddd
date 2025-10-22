@@ -133,6 +133,7 @@ export interface AccountLedgerEntry {
   debit: number;
   credit: number;
   balance: number;
+  balanceType: 'DR' | 'CR';
 }
 
 export interface AccountLedger {

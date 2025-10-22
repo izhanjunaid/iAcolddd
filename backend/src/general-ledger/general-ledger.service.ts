@@ -25,6 +25,7 @@ export interface AccountLedgerEntry {
   debit: number;
   credit: number;
   balance: number;
+  balanceType: 'DR' | 'CR';
 }
 
 export interface TrialBalanceEntry {
@@ -205,6 +206,14 @@ export class GeneralLedgerService {
         runningBalance += credit - debit;
       }
 
+      // Determine balance type based on account nature
+      let balanceType: 'DR' | 'CR';
+      if (account.nature === AccountNature.DEBIT) {
+        balanceType = runningBalance >= 0 ? 'DR' : 'CR';
+      } else {
+        balanceType = runningBalance >= 0 ? 'CR' : 'DR';
+      }
+
       return {
         date: detail.voucher.voucherDate,
         voucherNumber: detail.voucher.voucherNumber,
@@ -213,7 +222,8 @@ export class GeneralLedgerService {
         description: detail.description || detail.voucher.description || '',
         debit,
         credit,
-        balance: runningBalance,
+        balance: Math.abs(runningBalance),
+        balanceType,
       };
     });
 

@@ -286,8 +286,7 @@ export const AccountLedgerPage = () => {
                                 {entry.credit > 0 ? entry.credit.toFixed(2) : '-'}
                               </TableCell>
                               <TableCell className="text-right font-mono font-semibold">
-                                {Math.abs(entry.balance).toFixed(2)}{' '}
-                                {entry.balance >= 0 ? 'DR' : 'CR'}
+                                {entry.balance.toFixed(2)} {entry.balanceType}
                               </TableCell>
                             </TableRow>
                           ))}
