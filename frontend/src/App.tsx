@@ -5,6 +5,7 @@ import { JournalVoucherPage } from './pages/JournalVoucherPage';
 import { VouchersPage } from './pages/VouchersPage';
 import { TrialBalancePage } from './pages/TrialBalancePage';
 import { AccountLedgerPage } from './pages/AccountLedgerPage';
+import CustomersPage from './pages/CustomersPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuthStore } from './stores/authStore';
 
@@ -26,6 +27,9 @@ const Dashboard = () => {
             <nav className="flex gap-4">
               <Link to="/dashboard" className="text-sm hover:underline">
                 Dashboard
+              </Link>
+              <Link to="/customers" className="text-sm hover:underline">
+                Customers
               </Link>
               <Link to="/accounts" className="text-sm hover:underline">
                 Chart of Accounts
@@ -71,6 +75,15 @@ const Dashboard = () => {
           </div>
           <div className="grid grid-cols-4 gap-4 mt-6">
             <Link
+              to="/customers"
+              className="p-4 border rounded-lg hover:bg-accent transition-colors"
+            >
+              <h3 className="font-semibold mb-2">👥 Customers</h3>
+              <p className="text-sm text-muted-foreground">
+                Manage customer accounts
+              </p>
+            </Link>
+            <Link
               to="/accounts"
               className="p-4 border rounded-lg hover:bg-accent transition-colors"
             >
@@ -97,12 +110,6 @@ const Dashboard = () => {
                 Verify books are balanced
               </p>
             </Link>
-            <div className="p-4 border rounded-lg opacity-50 cursor-not-allowed">
-              <h3 className="font-semibold mb-2">📈 Reports</h3>
-              <p className="text-sm text-muted-foreground">
-                Coming soon in Phase 7
-              </p>
-            </div>
           </div>
         </div>
       </main>
@@ -139,6 +146,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/customers"
+          element={
+            <ProtectedRoute requiredPermissions={['customers.read']}>
+              <CustomersPage />
             </ProtectedRoute>
           }
         />

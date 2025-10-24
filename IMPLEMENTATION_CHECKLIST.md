@@ -172,12 +172,26 @@
 
 ---
 
-## Phase 5: Warehouse Operations (GRN, GDN, Stock) ⏹️
+## Phase 5: Customers Module & Warehouse Operations 🚧
 
 **Duration:** 6 weeks  
-**Status:** 🔴 Not Started  
-**Progress:** 0/7 tasks
+**Status:** 🟡 In Progress (30% complete)  
+**Progress:** 10/26 tasks  
+**Started:** October 22, 2025
 
+### **Part 1: Customers Module ✅ Complete**
+- [x] Modify AccountCategory enum (add CUSTOMER, SUPPLIER)
+- [x] Add customer_id to accounts table (migration)
+- [x] Create Customer entity with full fields
+- [x] Create CustomersModule, Service, Controller
+- [x] Implement atomic customer+account creation (transaction)
+- [x] Implement customer CRUD operations
+- [x] Create customers API with pagination
+- [x] Create frontend CustomersPage with full CRUD UI
+- [x] Create reusable CustomerSelector component
+- [x] Add customer permissions to seed data
+
+### **Part 2: Warehouse Operations ⏹️ Pending**
 - [ ] Create ProductsModule
 - [ ] Create WarehousesModule (warehouses, rooms, racks)
 - [ ] Create GRNModule (Goods Receipt Notes)
@@ -185,8 +199,18 @@
 - [ ] Implement stock tracking and balance calculation
 - [ ] Implement inter-room transfer functionality
 - [ ] Create all warehouse management UIs
+- [ ] Integrate customers with GRN/GDN
+- [ ] Add customer balance queries
+- [ ] Test complete warehouse workflow
 
 **Verification:**
+- [x] Customer creation with AR account works ✓
+- [x] Customer code auto-generated (CUST-0001) ✓
+- [x] Account code auto-generated (02-0001) ✓
+- [x] Bidirectional customer-account link works ✓
+- [x] Customer CRUD operations work ✓
+- [x] CustomerSelector component reusable ✓
+- [x] Phase 3 accounts functionality unaffected ✓
 - [ ] Complete GRN flow works (receive goods, allocate, track weights)
 - [ ] Complete GDN flow works (deliver goods, reduce stock)
 - [ ] Stock summary by product/room is accurate
@@ -194,7 +218,17 @@
 - [ ] Product/warehouse/room/rack management UIs work
 
 **Notes:**
-- 
+- ✅ **Customers Module Complete** - Ready for GRN/GDN integration
+- 📝 See `CUSTOMERS_MODULE_INTEGRATION_ANALYSIS.md` for integration design
+- 📝 See `CUSTOMERS_MODULE_TESTING_GUIDE.md` for test scenarios
+- ⚠️ Database migration required: `AddCustomerSupplierAccounts`
+- ⚠️ Backend restart required after module creation
+- ✅ ~2,500 lines of production code written
+- ✅ 16 new files created (backend + frontend)
+- ✅ 6 API endpoints with full Swagger docs
+- ✅ Atomic transaction ensures data consistency
+- ✅ Soft delete preserves customer history
+- 🚧 Warehouse modules depend on CustomersModule
 
 ---
 

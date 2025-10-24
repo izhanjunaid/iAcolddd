@@ -11,8 +11,9 @@ A complete modernization of a legacy ERP system, transforming it from C# + SQL S
 - **Phase 2:** ✅ Complete - Authentication & Authorization
 - **Phase 3:** ✅ Complete - Chart of Accounts Module
 - **Phase 4:** ✅ Complete (100%) - Vouchers & General Ledger
-- **Phase 5-11:** ⏸️ Pending
-- **Overall Progress:** 36% (4 of 11 phases complete)
+- **Phase 5:** 🚧 In Progress (30%) - Customers Module (Complete), Warehouse Operations (Pending)
+- **Phase 6-11:** ⏸️ Pending
+- **Overall Progress:** 39% (4.3 of 11 phases complete)
 
 ## 🎯 **Technology Stack**
 

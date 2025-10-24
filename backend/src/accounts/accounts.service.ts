@@ -169,6 +169,15 @@ export class AccountsService {
     return account;
   }
 
+  async findByCode(code: string): Promise<Account | null> {
+    const account = await this.accountRepository.findOne({
+      where: { code, deletedAt: IsNull() as any },
+      relations: ['parent', 'children'],
+    });
+
+    return account;
+  }
+
   async update(
     id: string,
     updateAccountDto: UpdateAccountDto,

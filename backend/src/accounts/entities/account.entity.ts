@@ -51,6 +51,13 @@ export class Account {
   @Column({ type: 'enum', enum: AccountCategory })
   category: AccountCategory;
 
+  // Link to customer/supplier entity (for CUSTOMER/SUPPLIER category accounts)
+  @Column({ type: 'uuid', nullable: true, name: 'customer_id' })
+  customerId: string | null;
+
+  // Note: ManyToOne relation to Customer will be added when Customer entity is created
+  // to avoid circular dependency issues during module creation
+
   @Column({ type: 'boolean', default: true, name: 'is_active' })
   isActive: boolean;
 
