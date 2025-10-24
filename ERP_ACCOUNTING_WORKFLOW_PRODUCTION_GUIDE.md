@@ -258,6 +258,77 @@ Line 2: Accounts Receivable (1-0001-0003) CR 3,000.00
 
 ---
 
+## Income Statement Workflow
+
+### 1. Revenue Recognition Process
+**Automatic Revenue Tracking**:
+- All sales transactions automatically post to revenue accounts
+- Revenue accounts are CREDIT nature (increase with credit entries)
+- Real-time revenue accumulation for reporting
+
+**Revenue Account Structure**:
+```
+4-0001 Revenue (CONTROL)
+├── 4-0001-0001 Cold Storage Revenue (DETAIL)
+├── 4-0001-0002 Service Revenue (DETAIL)
+└── 4-0001-0003 Other Revenue (DETAIL)
+```
+
+### 2. Expense Recognition Process
+**Expense Tracking**:
+- All expense transactions post to expense accounts
+- Expense accounts are DEBIT nature (increase with debit entries)
+- Categorized by expense type for detailed analysis
+
+**Expense Account Structure**:
+```
+5-0001 Expenses (CONTROL)
+├── 5-0001-0001 Operating Expenses (SUB_CONTROL)
+│   ├── 5-0001-0001-0001 Electricity Expense (DETAIL)
+│   ├── 5-0001-0001-0002 Salaries Expense (DETAIL)
+│   └── 5-0001-0001-0003 Maintenance Expense (DETAIL)
+└── 5-0001-0002 Administrative Expenses (SUB_CONTROL)
+    ├── 5-0001-0002-0001 Office Supplies (DETAIL)
+    └── 5-0001-0002-0002 Insurance Expense (DETAIL)
+```
+
+### 3. Income Statement Generation Workflow
+**Step-by-Step Process**:
+1. **Period Selection**: Choose from/to dates for reporting
+2. **Revenue Calculation**: Sum all revenue account balances for the period
+3. **Expense Calculation**: Sum all expense account balances for the period
+4. **Profit Calculation**: 
+   - Gross Profit = Total Revenue
+   - Operating Income = Total Revenue - Total Expenses
+   - Net Income = Operating Income (assuming no other income/expenses)
+5. **Report Generation**: Format and present the data
+
+**API Endpoints for Income Statement**:
+- `GET /financial-statements/income-statement` - Generate for period
+- `GET /financial-statements/income-statement/comparison` - With previous period
+- `GET /financial-statements/income-statement/revenue-breakdown` - Detailed revenue
+- `GET /financial-statements/income-statement/expense-breakdown` - Detailed expenses
+- `GET /financial-statements/income-statement/monthly/:year` - Monthly statements
+- `GET /financial-statements/income-statement/quarterly/:year` - Quarterly statements
+
+### 4. Income Statement Business Rules
+**Revenue Recognition**:
+- Revenue recognized when service is provided or goods are delivered
+- All revenue transactions must be posted to DETAIL level accounts
+- Revenue accounts cannot have debit balances (except for adjustments)
+
+**Expense Recognition**:
+- Expenses recognized when incurred (accrual basis)
+- All expense transactions must be posted to DETAIL level accounts
+- Expense accounts cannot have credit balances (except for adjustments)
+
+**Period Closing**:
+- Income statement can be generated for any period
+- Previous period comparisons automatically calculated
+- Variance analysis shows percentage changes
+
+---
+
 ## General Ledger Operations
 
 ### 1. Account Balance Calculation
@@ -307,6 +378,46 @@ Account Code | Account Name           | Debit Balance | Credit Balance
              | DIFFERENCE             | 4,000.00      |
 ```
 
+### 4. Income Statement Example
+**Sample Income Statement for January 2025**:
+```
+ADVANCE ERP COMPANY
+INCOME STATEMENT
+For the Period: January 1, 2025 to January 31, 2025
+
+REVENUE
+  Cold Storage Revenue (4-0001-0001)     $12,000.00
+  Service Revenue (4-0001-0002)          $3,000.00
+  -----------------------------------------
+  TOTAL REVENUE                          $15,000.00
+
+EXPENSES
+  Operating Expenses
+    Electricity Expense (5-0001-0001-0001) $2,500.00
+    Salaries Expense (5-0001-0001-0002)    $8,000.00
+    Maintenance Expense (5-0001-0001-0003) $1,200.00
+    -----------------------------------------
+    Total Operating Expenses              $11,700.00
+
+  Administrative Expenses
+    Office Supplies (5-0001-0002-0001)    $300.00
+    Insurance Expense (5-0001-0002-0002)  $500.00
+    -----------------------------------------
+    Total Administrative Expenses         $800.00
+  -----------------------------------------
+  TOTAL EXPENSES                         $12,500.00
+
+NET INCOME                               $2,500.00
+```
+
+**Previous Period Comparison**:
+```
+                    Current Period | Previous Period | Variance | % Change
+Total Revenue       $15,000.00     | $12,000.00      | +$3,000  | +25.0%
+Total Expenses      $12,500.00     | $10,000.00      | +$2,500  | +25.0%
+Net Income          $2,500.00      | $2,000.00       | +$500    | +25.0%
+```
+
 ---
 
 ## Financial Reporting Capabilities
@@ -317,23 +428,67 @@ Account Code | Account Name           | Debit Balance | Credit Balance
 - **Account Ledger**: Detailed transaction history
 - **Category Summary**: Balances by account category
 
-### 2. Financial Statements (Foundation)
-**Balance Sheet Data**:
+### 2. Income Statement (Comprehensive Implementation)
+**Complete Income Statement Generation**:
+- **Revenue Section**: All revenue accounts with individual line items
+- **Expense Section**: All expense accounts with detailed breakdown
+- **Profit Calculations**: Gross Profit, Operating Income, Net Income
+- **Period Comparison**: Current vs Previous period analysis
+- **Variance Analysis**: Percentage changes and trends
+
+**Income Statement Features**:
+- Monthly, Quarterly, and Yearly statements
+- Custom date range reporting
+- Account-level detail breakdown
+- Variance calculations with percentages
+- Company branding and formatting
+
+**Sample Income Statement Structure**:
+```
+COMPANY NAME
+INCOME STATEMENT
+For the Period: January 1, 2025 to January 31, 2025
+
+REVENUE
+  Cold Storage Revenue        $15,000.00
+  Service Revenue            $8,500.00
+  Other Revenue              $2,000.00
+  -------------------------
+  TOTAL REVENUE              $25,500.00
+
+EXPENSES
+  Operating Expenses
+    Electricity Expense      $3,200.00
+    Salaries Expense         $12,000.00
+    Maintenance Expense      $1,800.00
+    Rent Expense             $2,500.00
+    -------------------------
+    Total Operating Expenses $19,500.00
+
+  Administrative Expenses
+    Office Supplies          $500.00
+    Insurance Expense        $800.00
+    -------------------------
+    Total Admin Expenses     $1,300.00
+  -------------------------
+  TOTAL EXPENSES             $20,800.00
+
+NET INCOME                   $4,700.00
+```
+
+### 3. Balance Sheet Data (Foundation)
+**Balance Sheet Components**:
 - Total Assets = Current Assets + Fixed Assets
 - Total Liabilities = Current Liabilities + Long-term Liabilities
 - Owner's Equity = Owner's Capital + Retained Earnings
 - **Equation**: Assets = Liabilities + Owner's Equity
 
-**Income Statement Data**:
-- Total Revenue = All revenue account balances
-- Total Expenses = All expense account balances
-- Net Income = Total Revenue - Total Expenses
-
-### 3. Management Reports
+### 4. Management Reports
 - **Aging Reports**: Outstanding receivables/payables
 - **Cash Flow Analysis**: Cash movement tracking
 - **Budget vs Actual**: Performance analysis
 - **Trend Analysis**: Period-over-period comparisons
+- **Income Statement Trends**: Monthly/Quarterly revenue and expense analysis
 
 ---
 
@@ -457,9 +612,10 @@ Daily Operations
 
 ### 2. Sales and Billing
 **Integration Points**:
-- Invoice generation → Receivable creation
+- Invoice generation → Receivable creation + Revenue recognition
 - Payment receipt → Cash/Bank increase
-- Credit note → Receivable adjustment
+- Credit note → Receivable adjustment + Revenue adjustment
+- **Income Statement Impact**: All sales transactions automatically flow to revenue accounts
 
 ### 3. Payroll System
 **Integration Points**:
@@ -523,6 +679,10 @@ Daily Operations
 - [x] Account ledgers
 - [x] Trial balance
 - [x] Category summaries
+- [x] **Income Statement generation**
+- [x] **Revenue and expense breakdowns**
+- [x] **Period comparison analysis**
+- [x] **Monthly/Quarterly/Yearly statements**
 - [x] Audit logs
 
 ### 🔄 Production Deployment Requirements

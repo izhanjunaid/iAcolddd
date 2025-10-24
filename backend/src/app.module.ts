@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { AccountsModule } from './accounts/accounts.module';
 import { VouchersModule } from './vouchers/vouchers.module';
 import { GeneralLedgerModule } from './general-ledger/general-ledger.module';
+import { IncomeStatementModule } from './financial-statements/income-statement.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -53,6 +54,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     AccountsModule,
     VouchersModule,
     GeneralLedgerModule,
+    IncomeStatementModule,
   ],
   controllers: [AppController],
   providers: [
