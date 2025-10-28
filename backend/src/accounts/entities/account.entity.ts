@@ -13,6 +13,8 @@ import { User } from '../../users/entities/user.entity';
 import { AccountType } from '../../common/enums/account-type.enum';
 import { AccountNature } from '../../common/enums/account-nature.enum';
 import { AccountCategory } from '../../common/enums/account-category.enum';
+import { AccountSubCategory } from '../../common/enums/account-sub-category.enum';
+import { FinancialStatement } from '../../common/enums/financial-statement.enum';
 
 @Entity('accounts')
 export class Account {
@@ -51,6 +53,28 @@ export class Account {
   @Column({ type: 'enum', enum: AccountCategory })
   category: AccountCategory;
 
+  @Column({
+    type: 'enum',
+    enum: AccountSubCategory,
+    nullable: true,
+    name: 'sub_category',
+  })
+  subCategory: AccountSubCategory | null;
+
+  @Column({
+    type: 'enum',
+    enum: FinancialStatement,
+    nullable: true,
+    name: 'financial_statement',
+  })
+  financialStatement: FinancialStatement | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true, name: 'statement_section' })
+  statementSection: string | null;
+
+  @Column({ type: 'integer', default: 0, name: 'display_order' })
+  displayOrder: number;
+
   // Link to customer/supplier entity (for CUSTOMER/SUPPLIER category accounts)
   @Column({ type: 'uuid', nullable: true, name: 'customer_id' })
   customerId: string | null;
@@ -63,6 +87,25 @@ export class Account {
 
   @Column({ type: 'boolean', default: false, name: 'is_system' })
   isSystem: boolean;
+
+  // Behavior flags
+  @Column({ type: 'boolean', default: false, name: 'is_cash_account' })
+  isCashAccount: boolean;
+
+  @Column({ type: 'boolean', default: false, name: 'is_bank_account' })
+  isBankAccount: boolean;
+
+  @Column({ type: 'boolean', default: false, name: 'is_depreciable' })
+  isDepreciable: boolean;
+
+  @Column({ type: 'boolean', default: false, name: 'require_cost_center' })
+  requireCostCenter: boolean;
+
+  @Column({ type: 'boolean', default: false, name: 'require_project' })
+  requireProject: boolean;
+
+  @Column({ type: 'boolean', default: true, name: 'allow_direct_posting' })
+  allowDirectPosting: boolean;
 
   @Column({ type: 'decimal', precision: 18, scale: 2, default: 0, name: 'opening_balance' })
   openingBalance: number;

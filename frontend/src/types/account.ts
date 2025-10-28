@@ -17,6 +17,31 @@ export enum AccountCategory {
   EXPENSE = 'EXPENSE',
 }
 
+export enum AccountSubCategory {
+  CURRENT_ASSET = 'CURRENT_ASSET',
+  NON_CURRENT_ASSET = 'NON_CURRENT_ASSET',
+  FIXED_ASSET = 'FIXED_ASSET',
+  INTANGIBLE_ASSET = 'INTANGIBLE_ASSET',
+  CURRENT_LIABILITY = 'CURRENT_LIABILITY',
+  NON_CURRENT_LIABILITY = 'NON_CURRENT_LIABILITY',
+  SHARE_CAPITAL = 'SHARE_CAPITAL',
+  RETAINED_EARNINGS = 'RETAINED_EARNINGS',
+  RESERVES = 'RESERVES',
+  OPERATING_REVENUE = 'OPERATING_REVENUE',
+  NON_OPERATING_REVENUE = 'NON_OPERATING_REVENUE',
+  COST_OF_GOODS_SOLD = 'COST_OF_GOODS_SOLD',
+  OPERATING_EXPENSE = 'OPERATING_EXPENSE',
+  ADMINISTRATIVE_EXPENSE = 'ADMINISTRATIVE_EXPENSE',
+  FINANCIAL_EXPENSE = 'FINANCIAL_EXPENSE',
+}
+
+export enum FinancialStatement {
+  BALANCE_SHEET = 'BALANCE_SHEET',
+  INCOME_STATEMENT = 'INCOME_STATEMENT',
+  CASH_FLOW_STATEMENT = 'CASH_FLOW_STATEMENT',
+  CHANGES_IN_EQUITY = 'CHANGES_IN_EQUITY',
+}
+
 export interface Account {
   id: string;
   code: string;
@@ -25,6 +50,21 @@ export interface Account {
   accountType: AccountType;
   nature: AccountNature;
   category: AccountCategory;
+  
+  // New Phase 1 fields
+  subCategory: AccountSubCategory | null;
+  financialStatement: FinancialStatement | null;
+  statementSection: string | null;
+  displayOrder: number;
+  
+  // Behavior flags
+  isCashAccount: boolean;
+  isBankAccount: boolean;
+  isDepreciable: boolean;
+  requireCostCenter: boolean;
+  requireProject: boolean;
+  allowDirectPosting: boolean;
+  
   isActive: boolean;
   isSystem: boolean;
   openingBalance: number;
@@ -65,6 +105,21 @@ export interface CreateAccountDto {
   accountType: AccountType;
   nature: AccountNature;
   category: AccountCategory;
+  
+  // New Phase 1 fields
+  subCategory?: AccountSubCategory | null;
+  financialStatement?: FinancialStatement | null;
+  statementSection?: string | null;
+  displayOrder?: number;
+  
+  // Behavior flags
+  isCashAccount?: boolean;
+  isBankAccount?: boolean;
+  isDepreciable?: boolean;
+  requireCostCenter?: boolean;
+  requireProject?: boolean;
+  allowDirectPosting?: boolean;
+  
   isActive?: boolean;
   openingBalance?: number;
   openingDate?: string;

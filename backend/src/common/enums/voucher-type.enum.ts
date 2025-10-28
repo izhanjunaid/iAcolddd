@@ -7,6 +7,9 @@ export enum VoucherType {
   PURCHASE = 'PURCHASE',         // PI - Purchase Invoice (future)
   DEBIT_NOTE = 'DEBIT_NOTE',     // DN - Debit Note (future)
   CREDIT_NOTE = 'CREDIT_NOTE',   // CN - Credit Note (future)
+  SYSTEM_GENERATED = 'SYSTEM_GENERATED', // SG - System generated entries
+  MEMO = 'MEMO',                 // MM - Memo entries (no financial impact)
+  REVERSING = 'REVERSING',       // RV - Reversing entries
 }
 
 // Helper to get voucher prefix for number generation
@@ -20,6 +23,9 @@ export function getVoucherPrefix(type: VoucherType): string {
     [VoucherType.PURCHASE]: 'PI',
     [VoucherType.DEBIT_NOTE]: 'DN',
     [VoucherType.CREDIT_NOTE]: 'CN',
+    [VoucherType.SYSTEM_GENERATED]: 'SG',
+    [VoucherType.MEMO]: 'MM',
+    [VoucherType.REVERSING]: 'REV',
   };
   return prefixMap[type];
 }

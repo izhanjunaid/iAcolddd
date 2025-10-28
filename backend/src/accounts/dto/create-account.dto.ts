@@ -16,6 +16,8 @@ import {
 import { AccountType } from '../../common/enums/account-type.enum';
 import { AccountNature } from '../../common/enums/account-nature.enum';
 import { AccountCategory } from '../../common/enums/account-category.enum';
+import { AccountSubCategory } from '../../common/enums/account-sub-category.enum';
+import { FinancialStatement } from '../../common/enums/financial-statement.enum';
 
 export class CreateAccountDto {
   @ApiPropertyOptional({ example: '1-0000', description: 'Account code (auto-generated if not provided)' })
@@ -152,5 +154,58 @@ export class CreateAccountDto {
   @ApiPropertyOptional({ example: { bankName: 'MCB', accountNumber: '1234567890' } })
   @IsOptional()
   metadata?: Record<string, any>;
+
+  // Phase 1 GL Foundation Fields
+  @ApiPropertyOptional({ enum: AccountSubCategory, example: AccountSubCategory.CURRENT_ASSET })
+  @IsOptional()
+  @IsEnum(AccountSubCategory)
+  subCategory?: AccountSubCategory;
+
+  @ApiPropertyOptional({ enum: FinancialStatement, example: FinancialStatement.BALANCE_SHEET })
+  @IsOptional()
+  @IsEnum(FinancialStatement)
+  financialStatement?: FinancialStatement;
+
+  @ApiPropertyOptional({ example: 'Current Assets' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  statementSection?: string;
+
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  displayOrder?: number;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  isCashAccount?: boolean;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  isBankAccount?: boolean;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  isDepreciable?: boolean;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  requireCostCenter?: boolean;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  requireProject?: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  allowDirectPosting?: boolean;
 }
 

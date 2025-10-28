@@ -31,6 +31,9 @@ export class VoucherMaster {
   @Column({ name: 'voucher_date', type: 'date' })
   voucherDate: Date;
 
+  @Column({ name: 'fiscal_period_id', type: 'uuid', nullable: true })
+  fiscalPeriodId: string | null;
+
   @Column({ type: 'text', nullable: true })
   description: string;
 

@@ -26,6 +26,11 @@ export class VoucherLineItemDto {
   @Min(1)
   lineNumber: number;
 
+  @ApiPropertyOptional({ description: 'Cost center ID' })
+  @IsString()
+  @IsOptional()
+  costCenterId?: string;
+
   @ApiPropertyOptional({ description: 'Additional metadata' })
   @IsOptional()
   metadata?: Record<string, any>;

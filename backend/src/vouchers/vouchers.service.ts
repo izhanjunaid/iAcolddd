@@ -9,6 +9,7 @@ import { Repository, DataSource, Like } from 'typeorm';
 import { VoucherMaster, VoucherDetail } from './entities';
 import { CreateVoucherDto, UpdateVoucherDto, QueryVouchersDto } from './dto';
 import { VoucherType, getVoucherPrefix } from '../common/enums/voucher-type.enum';
+import { FiscalPeriodsService } from '../fiscal-periods/fiscal-periods.service';
 
 @Injectable()
 export class VouchersService {
@@ -18,6 +19,7 @@ export class VouchersService {
     @InjectRepository(VoucherDetail)
     private readonly voucherDetailRepository: Repository<VoucherDetail>,
     private readonly dataSource: DataSource,
+    private readonly fiscalPeriodsService: FiscalPeriodsService,
   ) {}
 
   /**
@@ -26,6 +28,22 @@ export class VouchersService {
   async create(createVoucherDto: CreateVoucherDto, userId: string) {
     // Validate voucher
     this.validateVoucher(createVoucherDto);
+
+    // CRITICAL: Validate fiscal period is open
+    const voucherDate = new Date(createVoucherDto.voucherDate);
+    const period = await this.fiscalPeriodsService.findPeriodByDate(voucherDate);
+    
+    if (!period) {
+      throw new BadRequestException(
+        `No fiscal period found for date ${voucherDate.toISOString().split('T')[0]}. Please ensure the date falls within an active fiscal year.`
+      );
+    }
+    
+    if (period.isClosed) {
+      throw new BadRequestException(
+        `Cannot post voucher to closed period: ${period.periodName} (${period.startDate} - ${period.endDate}). Please contact your administrator to reopen the period if this is an adjustment.`
+      );
+    }
 
     // Generate voucher number
     const voucherNumber = await this.generateVoucherNumber(
@@ -45,6 +63,7 @@ export class VouchersService {
         voucherNumber,
         voucherType: createVoucherDto.voucherType,
         voucherDate: new Date(createVoucherDto.voucherDate),
+        fiscalPeriodId: period.id, // Link to fiscal period
         description: createVoucherDto.description,
         paymentMode: createVoucherDto.paymentMode,
         chequeNumber: createVoucherDto.chequeNumber,

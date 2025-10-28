@@ -24,6 +24,9 @@ export class VoucherDetail {
   @Column({ name: 'account_code', length: 20 })
   accountCode: string;
 
+  @Column({ name: 'cost_center_id', type: 'uuid', nullable: true })
+  costCenterId: string | null;
+
   @Column({ type: 'text', nullable: true })
   description: string;
 

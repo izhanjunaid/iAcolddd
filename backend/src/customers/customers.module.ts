@@ -12,7 +12,10 @@ import { AccountsModule } from '../accounts/accounts.module';
   ],
   controllers: [CustomersController],
   providers: [CustomersService],
-  exports: [CustomersService], // Export for use in other modules (GRN, GDN, etc.)
+  exports: [
+    CustomersService, // Export for use in other modules (GRN, GDN, etc.)
+    TypeOrmModule, // Export TypeORM module to make CustomerRepository available
+  ],
 })
 export class CustomersModule {}
 

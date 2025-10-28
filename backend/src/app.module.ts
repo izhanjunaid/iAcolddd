@@ -10,6 +10,9 @@ import { AccountsModule } from './accounts/accounts.module';
 import { VouchersModule } from './vouchers/vouchers.module';
 import { GeneralLedgerModule } from './general-ledger/general-ledger.module';
 import { CustomersModule } from './customers/customers.module';
+import { FiscalPeriodsModule } from './fiscal-periods/fiscal-periods.module';
+import { CostCentersModule } from './cost-centers/cost-centers.module';
+import { InventoryModule } from './inventory/inventory.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -55,6 +58,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     VouchersModule,
     GeneralLedgerModule,
     CustomersModule,
+    FiscalPeriodsModule,
+    CostCentersModule,
+    InventoryModule,
   ],
   controllers: [AppController],
   providers: [

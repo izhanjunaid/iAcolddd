@@ -6,6 +6,11 @@ import { VouchersPage } from './pages/VouchersPage';
 import { TrialBalancePage } from './pages/TrialBalancePage';
 import { AccountLedgerPage } from './pages/AccountLedgerPage';
 import CustomersPage from './pages/CustomersPage';
+import FiscalPeriodsPage from './pages/FiscalPeriodsPage';
+import CostCentersPage from './pages/CostCentersPage';
+import InventoryItemsPage from './pages/InventoryItemsPage';
+import InventoryTransactionsPage from './pages/InventoryTransactionsPage';
+import InventoryBalancesPage from './pages/InventoryBalancesPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuthStore } from './stores/authStore';
 
@@ -36,6 +41,21 @@ const Dashboard = () => {
               </Link>
               <Link to="/vouchers" className="text-sm hover:underline">
                 Vouchers
+              </Link>
+              <Link to="/inventory/items" className="text-sm hover:underline">
+                Inventory Items
+              </Link>
+              <Link to="/inventory/transactions" className="text-sm hover:underline">
+                Stock Transactions
+              </Link>
+              <Link to="/inventory/balances" className="text-sm hover:underline">
+                Stock Balances
+              </Link>
+              <Link to="/fiscal-periods" className="text-sm hover:underline">
+                Fiscal Periods
+              </Link>
+              <Link to="/cost-centers" className="text-sm hover:underline">
+                Cost Centers
               </Link>
               <Link to="/trial-balance" className="text-sm hover:underline">
                 Trial Balance
@@ -99,6 +119,51 @@ const Dashboard = () => {
               <h3 className="font-semibold mb-2">📝 Vouchers</h3>
               <p className="text-sm text-muted-foreground">
                 Create and manage journal entries
+              </p>
+            </Link>
+            <Link
+              to="/inventory/items"
+              className="p-4 border rounded-lg hover:bg-accent transition-colors"
+            >
+              <h3 className="font-semibold mb-2">📦 Inventory Items</h3>
+              <p className="text-sm text-muted-foreground">
+                Manage product catalog
+              </p>
+            </Link>
+            <Link
+              to="/inventory/transactions"
+              className="p-4 border rounded-lg hover:bg-accent transition-colors"
+            >
+              <h3 className="font-semibold mb-2">📋 Stock Transactions</h3>
+              <p className="text-sm text-muted-foreground">
+                Process stock movements
+              </p>
+            </Link>
+            <Link
+              to="/inventory/balances"
+              className="p-4 border rounded-lg hover:bg-accent transition-colors"
+            >
+              <h3 className="font-semibold mb-2">📊 Stock Balances</h3>
+              <p className="text-sm text-muted-foreground">
+                View current inventory levels
+              </p>
+            </Link>
+            <Link
+              to="/fiscal-periods"
+              className="p-4 border rounded-lg hover:bg-accent transition-colors"
+            >
+              <h3 className="font-semibold mb-2">📅 Fiscal Periods</h3>
+              <p className="text-sm text-muted-foreground">
+                Manage fiscal years and periods
+              </p>
+            </Link>
+            <Link
+              to="/cost-centers"
+              className="p-4 border rounded-lg hover:bg-accent transition-colors"
+            >
+              <h3 className="font-semibold mb-2">🏢 Cost Centers</h3>
+              <p className="text-sm text-muted-foreground">
+                Track departmental costs
               </p>
             </Link>
             <Link
@@ -194,6 +259,46 @@ function App() {
           element={
             <ProtectedRoute requiredPermissions={['vouchers.read']}>
               <AccountLedgerPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/fiscal-periods"
+          element={
+            <ProtectedRoute requiredPermissions={['fiscal-periods.read']}>
+              <FiscalPeriodsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cost-centers"
+          element={
+            <ProtectedRoute requiredPermissions={['cost-centers.read']}>
+              <CostCentersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/inventory/items"
+          element={
+            <ProtectedRoute requiredPermissions={['inventory.items.read']}>
+              <InventoryItemsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/inventory/transactions"
+          element={
+            <ProtectedRoute requiredPermissions={['inventory.transactions.read']}>
+              <InventoryTransactionsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/inventory/balances"
+          element={
+            <ProtectedRoute requiredPermissions={['inventory.balances.read']}>
+              <InventoryBalancesPage />
             </ProtectedRoute>
           }
         />

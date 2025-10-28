@@ -17,6 +17,7 @@ import {
 import { AccountSelector } from '../components/AccountSelector';
 import { accountsService } from '../services/accountsService';
 import type { Account, CreateAccountDto, AccountType, AccountNature, AccountCategory } from '../types/account';
+import { AccountSubCategory, FinancialStatement } from '../types/account';
 
 // Validation schema
 const accountSchema = z.object({
@@ -26,6 +27,21 @@ const accountSchema = z.object({
   accountType: z.enum(['CONTROL', 'SUB_CONTROL', 'DETAIL']),
   nature: z.enum(['DEBIT', 'CREDIT']),
   category: z.enum(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']),
+  
+  // New Phase 1 fields
+  subCategory: z.nativeEnum(AccountSubCategory).optional().nullable(),
+  financialStatement: z.nativeEnum(FinancialStatement).optional().nullable(),
+  statementSection: z.string().optional().nullable(),
+  displayOrder: z.number().min(0).optional(),
+  
+  // Behavior flags
+  isCashAccount: z.boolean().optional(),
+  isBankAccount: z.boolean().optional(),
+  isDepreciable: z.boolean().optional(),
+  requireCostCenter: z.boolean().optional(),
+  requireProject: z.boolean().optional(),
+  allowDirectPosting: z.boolean().optional(),
+  
   openingBalance: z.number().min(0).optional(),
 });
 
@@ -334,6 +350,128 @@ export const AccountsPage = () => {
                   </div>
                 </div>
 
+                {/* New Phase 1 Fields */}
+                <div className="border-t pt-4">
+                  <h3 className="text-lg font-semibold mb-4">Account Classification & Behavior</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="subCategory">Sub Category</Label>
+                      <select
+                        id="subCategory"
+                        {...register('subCategory')}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">-- Select Sub Category --</option>
+                        {Object.values(AccountSubCategory).map(subCat => (
+                          <option key={subCat} value={subCat}>
+                            {subCat.replace(/_/g, ' ')}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="financialStatement">Financial Statement</Label>
+                      <select
+                        id="financialStatement"
+                        {...register('financialStatement')}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">-- Select Statement --</option>
+                        {Object.values(FinancialStatement).map(stmt => (
+                          <option key={stmt} value={stmt}>
+                            {stmt.replace(/_/g, ' ')}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="statementSection">Statement Section</Label>
+                      <Input
+                        id="statementSection"
+                        {...register('statementSection')}
+                        placeholder="e.g., Current Assets, Operating Expenses"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="displayOrder">Display Order</Label>
+                      <Input
+                        id="displayOrder"
+                        type="number"
+                        {...register('displayOrder', { valueAsNumber: true })}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <h4 className="text-md font-medium mb-2">Behavior Flags</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="isCashAccount"
+                          {...register('isCashAccount')}
+                          className="rounded"
+                        />
+                        <Label htmlFor="isCashAccount">Cash Account</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="isBankAccount"
+                          {...register('isBankAccount')}
+                          className="rounded"
+                        />
+                        <Label htmlFor="isBankAccount">Bank Account</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="isDepreciable"
+                          {...register('isDepreciable')}
+                          className="rounded"
+                        />
+                        <Label htmlFor="isDepreciable">Depreciable</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="requireCostCenter"
+                          {...register('requireCostCenter')}
+                          className="rounded"
+                        />
+                        <Label htmlFor="requireCostCenter">Require Cost Center</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="requireProject"
+                          {...register('requireProject')}
+                          className="rounded"
+                        />
+                        <Label htmlFor="requireProject">Require Project</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="allowDirectPosting"
+                          {...register('allowDirectPosting')}
+                          className="rounded"
+                        />
+                        <Label htmlFor="allowDirectPosting">Allow Direct Posting</Label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex gap-2">
                   <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? 'Saving...' : editingAccount ? 'Update' : 'Create'}
@@ -358,6 +496,9 @@ export const AccountsPage = () => {
                     <TableHead>Type</TableHead>
                     <TableHead>Nature</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead>Sub Category</TableHead>
+                    <TableHead>Financial Statement</TableHead>
+                    <TableHead>Flags</TableHead>
                     <TableHead>Opening Balance</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -379,6 +520,40 @@ export const AccountsPage = () => {
                         <span className="px-2 py-1 rounded text-xs bg-gray-100">
                           {account.category}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        {account.subCategory ? (
+                          <span className="px-2 py-1 rounded text-xs bg-purple-100">
+                            {account.subCategory.replace(/_/g, ' ')}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {account.financialStatement ? (
+                          <span className="px-2 py-1 rounded text-xs bg-orange-100">
+                            {account.financialStatement.replace(/_/g, ' ')}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {account.isCashAccount && (
+                            <span className="px-1 py-0.5 rounded text-xs bg-green-100 text-green-800">Cash</span>
+                          )}
+                          {account.isBankAccount && (
+                            <span className="px-1 py-0.5 rounded text-xs bg-blue-100 text-blue-800">Bank</span>
+                          )}
+                          {account.isDepreciable && (
+                            <span className="px-1 py-0.5 rounded text-xs bg-yellow-100 text-yellow-800">Depr</span>
+                          )}
+                          {account.requireCostCenter && (
+                            <span className="px-1 py-0.5 rounded text-xs bg-red-100 text-red-800">CC</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>{Number(account.openingBalance).toFixed(2)}</TableCell>
                       <TableCell>
