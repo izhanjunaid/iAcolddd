@@ -49,3 +49,10 @@ coverage/
 *.key
 .pnp.*
 
+# Test scripts and temporary files
+test_*.sh
+run-migration.bat
+
+# Playwright artifacts
+.playwright-mcp/
+
