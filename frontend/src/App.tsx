@@ -11,6 +11,7 @@ import CostCentersPage from './pages/CostCentersPage';
 import InventoryItemsPage from './pages/InventoryItemsPage';
 import InventoryTransactionsPage from './pages/InventoryTransactionsPage';
 import InventoryBalancesPage from './pages/InventoryBalancesPage';
+import TaxRatesPage from './pages/TaxRatesPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuthStore } from './stores/authStore';
 
@@ -56,6 +57,9 @@ const Dashboard = () => {
               </Link>
               <Link to="/cost-centers" className="text-sm hover:underline">
                 Cost Centers
+              </Link>
+              <Link to="/tax-rates" className="text-sm hover:underline">
+                Tax Rates
               </Link>
               <Link to="/trial-balance" className="text-sm hover:underline">
                 Trial Balance
@@ -173,6 +177,15 @@ const Dashboard = () => {
               <h3 className="font-semibold mb-2">⚖️ Trial Balance</h3>
               <p className="text-sm text-muted-foreground">
                 Verify books are balanced
+              </p>
+            </Link>
+            <Link
+              to="/tax-rates"
+              className="p-4 border rounded-lg hover:bg-accent transition-colors"
+            >
+              <h3 className="font-semibold mb-2">🧾 Tax Rates</h3>
+              <p className="text-sm text-muted-foreground">
+                Manage FBR tax rates & exemptions
               </p>
             </Link>
           </div>
@@ -299,6 +312,14 @@ function App() {
           element={
             <ProtectedRoute requiredPermissions={['inventory.balances.read']}>
               <InventoryBalancesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tax-rates"
+          element={
+            <ProtectedRoute requiredPermissions={['tax:view']}>
+              <TaxRatesPage />
             </ProtectedRoute>
           }
         />

@@ -13,6 +13,7 @@ import { CustomersModule } from './customers/customers.module';
 import { FiscalPeriodsModule } from './fiscal-periods/fiscal-periods.module';
 import { CostCentersModule } from './cost-centers/cost-centers.module';
 import { InventoryModule } from './inventory/inventory.module';
+import { TaxModule } from './tax/tax.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -61,6 +62,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     FiscalPeriodsModule,
     CostCentersModule,
     InventoryModule,
+    TaxModule,
   ],
   controllers: [AppController],
   providers: [
