@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 // Entities
-import { 
+import {
   InventoryItem,
   InventoryTransaction,
   InventoryBalance,
@@ -10,6 +10,7 @@ import {
   Warehouse,
   Room
 } from './entities';
+import { GlAccountConfiguration } from '../common/entities/gl-account-configuration.entity';
 
 // Services
 import { 
@@ -45,6 +46,7 @@ import { FiscalPeriodsModule } from '../fiscal-periods/fiscal-periods.module';
       InventoryCostLayer,
       Warehouse,
       Room,
+      GlAccountConfiguration,
     ]),
     
     // External modules for dependencies

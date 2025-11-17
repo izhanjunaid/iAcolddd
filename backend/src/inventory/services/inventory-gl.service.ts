@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VouchersService } from '../../vouchers/vouchers.service';
@@ -7,6 +7,7 @@ import { CustomersService } from '../../customers/customers.service';
 import { InventoryTransaction } from '../entities/inventory-transaction.entity';
 import { InventoryItem } from '../entities/inventory-item.entity';
 import { Account } from '../../accounts/entities/account.entity';
+import { GlAccountConfiguration } from '../../common/entities/gl-account-configuration.entity';
 import { VoucherType } from '../../common/enums/voucher-type.enum';
 import { InventoryTransactionType } from '../../common/enums/inventory-transaction-type.enum';
 import { CreateVoucherDto } from '../../vouchers/dto/create-voucher.dto';
@@ -22,8 +23,10 @@ interface InventoryGLAccounts {
 }
 
 @Injectable()
-export class InventoryGLService {
+export class InventoryGLService implements OnModuleInit {
+  private readonly logger = new Logger(InventoryGLService.name);
   private glAccounts: InventoryGLAccounts;
+  private glAccountsCache: Map<string, string> = new Map();
 
   constructor(
     private readonly vouchersService: VouchersService,
@@ -31,17 +34,95 @@ export class InventoryGLService {
     private readonly customersService: CustomersService,
     @InjectRepository(InventoryTransaction)
     private readonly transactionRepository: Repository<InventoryTransaction>,
-  ) {
-    // Initialize GL account mappings
-    this.glAccounts = {
-      inventoryAsset: '1-0001-0001-0004',        // Inventory (Current Asset)
-      costOfGoodsSold: '5-0001-0003-0001',      // Cost of Goods Sold (Expense)
-      grnPayable: '2-0001-0001-0002',           // GRN Payable (Current Liability)
-      inventoryLoss: '5-0001-0002-0002',        // Inventory Loss (Operating Expense)
-      inventoryGain: '4-0001-0002-0002',        // Inventory Gain (Other Income)
-      storageRevenue: '4-0001-0001-0001',       // Storage Revenue (Operating Revenue)
-      customerReceivables: '1-0001-0001-0003',  // Accounts Receivable (Current Asset)
-    };
+    @InjectRepository(GlAccountConfiguration)
+    private readonly glConfigRepository: Repository<GlAccountConfiguration>,
+  ) {}
+
+  /**
+   * Load GL account configuration from database on module initialization
+   */
+  async onModuleInit() {
+    await this.loadGLAccountConfiguration();
+  }
+
+  /**
+   * Load GL account configuration from database
+   */
+  private async loadGLAccountConfiguration(): Promise<void> {
+    try {
+      const configs = await this.glConfigRepository.find({
+        where: { isActive: true },
+        relations: ['account'],
+      });
+
+      const configMap: any = {};
+
+      for (const config of configs) {
+        this.glAccountsCache.set(config.configKey, config.account.code);
+
+        // Map database config keys to service property names
+        switch (config.configKey) {
+          case 'inventory_asset':
+            configMap.inventoryAsset = config.account.code;
+            break;
+          case 'cost_of_goods_sold':
+            configMap.costOfGoodsSold = config.account.code;
+            break;
+          case 'grn_payable':
+            configMap.grnPayable = config.account.code;
+            break;
+          case 'inventory_loss':
+            configMap.inventoryLoss = config.account.code;
+            break;
+          case 'inventory_gain':
+            configMap.inventoryGain = config.account.code;
+            break;
+          case 'storage_revenue':
+            configMap.storageRevenue = config.account.code;
+            break;
+          case 'customer_receivables':
+            configMap.customerReceivables = config.account.code;
+            break;
+        }
+      }
+
+      // Validate all required accounts are configured
+      const requiredKeys = [
+        'inventoryAsset',
+        'costOfGoodsSold',
+        'grnPayable',
+        'inventoryLoss',
+        'inventoryGain',
+        'storageRevenue',
+        'customerReceivables',
+      ];
+
+      const missingKeys = requiredKeys.filter(key => !configMap[key]);
+
+      if (missingKeys.length > 0) {
+        this.logger.error(
+          `Missing GL account configuration for: ${missingKeys.join(', ')}. ` +
+          'Please configure these accounts in the gl_account_configuration table.'
+        );
+        throw new BadRequestException(
+          `GL account configuration is incomplete. Missing: ${missingKeys.join(', ')}`
+        );
+      }
+
+      this.glAccounts = configMap;
+      this.logger.log('GL account configuration loaded successfully');
+    } catch (error) {
+      this.logger.error('Failed to load GL account configuration', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reload GL account configuration (useful after configuration changes)
+   */
+  async reloadGLAccountConfiguration(): Promise<void> {
+    this.glAccountsCache.clear();
+    await this.loadGLAccountConfiguration();
   }
 
   /**
@@ -432,9 +513,20 @@ export class InventoryGLService {
   }
 
   /**
-   * Update GL account mapping
+   * Update GL account mapping (persists to database)
    */
   async updateGLAccountMapping(newMapping: Partial<InventoryGLAccounts>, userId: string): Promise<void> {
+    // Map service property names to database config keys
+    const configKeyMap: Record<string, string> = {
+      inventoryAsset: 'inventory_asset',
+      costOfGoodsSold: 'cost_of_goods_sold',
+      grnPayable: 'grn_payable',
+      inventoryLoss: 'inventory_loss',
+      inventoryGain: 'inventory_gain',
+      storageRevenue: 'storage_revenue',
+      customerReceivables: 'customer_receivables',
+    };
+
     // Validate new accounts exist
     for (const [accountName, accountCode] of Object.entries(newMapping)) {
       if (accountCode) {
@@ -446,11 +538,64 @@ export class InventoryGLService {
       }
     }
 
-    // Update the mapping
-    Object.assign(this.glAccounts, newMapping);
+    // Update configurations in database
+    for (const [accountName, accountCode] of Object.entries(newMapping)) {
+      if (accountCode) {
+        const configKey = configKeyMap[accountName];
+        if (!configKey) {
+          continue;
+        }
 
-    // In a production system, this configuration would be stored in the database
-    // For now, it's just in memory
+        const config = await this.glConfigRepository.findOne({
+          where: { configKey },
+        });
+
+        if (config) {
+          // Update existing configuration
+          const account = await this.accountsService.findByCode(accountCode);
+          if (!account) {
+            throw new BadRequestException(`Account with code ${accountCode} not found`);
+          }
+          config.accountId = account.id;
+          config.updatedById = userId;
+          config.updatedAt = new Date();
+          await this.glConfigRepository.save(config);
+        } else {
+          // Create new configuration
+          const account = await this.accountsService.findByCode(accountCode);
+          if (!account) {
+            throw new BadRequestException(`Account with code ${accountCode} not found`);
+          }
+          const newConfig = this.glConfigRepository.create({
+            configKey,
+            configName: this.getConfigName(configKey),
+            accountId: account.id,
+            createdById: userId,
+            isActive: true,
+          });
+          await this.glConfigRepository.save(newConfig);
+        }
+      }
+    }
+
+    // Reload configuration from database
+    await this.reloadGLAccountConfiguration();
+  }
+
+  /**
+   * Get friendly name for config key
+   */
+  private getConfigName(configKey: string): string {
+    const nameMap: Record<string, string> = {
+      inventory_asset: 'Inventory Asset Account',
+      cost_of_goods_sold: 'Cost of Goods Sold Account',
+      grn_payable: 'GRN Payable Account',
+      inventory_loss: 'Inventory Loss Account',
+      inventory_gain: 'Inventory Gain Account',
+      storage_revenue: 'Storage Revenue Account',
+      customer_receivables: 'Customer Receivables Account',
+    };
+    return nameMap[configKey] || configKey;
   }
 
   /**

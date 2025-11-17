@@ -153,9 +153,22 @@ export class VouchersService {
       );
     }
 
-    // Apply sorting
+    // Apply sorting with whitelist validation to prevent SQL injection
+    const allowedSortFields = [
+      'voucherNumber',
+      'voucherType',
+      'voucherDate',
+      'description',
+      'totalAmount',
+      'isPosted',
+      'createdAt',
+      'updatedAt',
+      'postedAt',
+    ];
+
+    const safeSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'voucherDate';
     const orderDirection = sortOrder.toUpperCase() as 'ASC' | 'DESC';
-    queryBuilder.orderBy(`voucher.${sortBy}`, orderDirection);
+    queryBuilder.orderBy(`voucher.${safeSortBy}`, orderDirection);
 
     // Apply pagination
     const skip = (page - 1) * limit;

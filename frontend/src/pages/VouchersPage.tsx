@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -66,9 +67,11 @@ export const VouchersPage = () => {
 
     try {
       await vouchersService.postVoucher(id);
-      loadVouchers();
+      await loadVouchers();
+      toast.success('Voucher posted successfully');
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to post voucher');
+      const message = err.response?.data?.message || 'Failed to post voucher. Please try again.';
+      toast.error(message);
     }
   };
 
@@ -79,9 +82,11 @@ export const VouchersPage = () => {
 
     try {
       await vouchersService.deleteVoucher(id);
-      loadVouchers();
+      await loadVouchers();
+      toast.success('Voucher deleted successfully');
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to delete voucher');
+      const message = err.response?.data?.message || 'Failed to delete voucher. Please try again.';
+      toast.error(message);
     }
   };
 

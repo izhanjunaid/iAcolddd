@@ -14,6 +14,9 @@ import { FiscalPeriodsModule } from './fiscal-periods/fiscal-periods.module';
 import { CostCentersModule } from './cost-centers/cost-centers.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { TaxModule } from './tax/tax.module';
+import { BillingModule } from './billing/billing.module';
+import { InvoicesModule } from './invoices/invoices.module';
+import { FinancialStatementsModule } from './financial-statements/financial-statements.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -63,6 +66,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     CostCentersModule,
     InventoryModule,
     TaxModule,
+    BillingModule,
+    InvoicesModule,
+    FinancialStatementsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -74,3 +80,4 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
   ],
 })
 export class AppModule {}
+
