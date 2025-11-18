@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a full-stack **Cold Storage ERP System** with a NestJS backend and React frontend. The system manages accounting, inventory, billing, invoicing, and tax compliance for cold storage operations.
+This is a full-stack **Cold Storage ERP System** with a NestJS backend and React frontend. The system manages accounting, inventory, billing, invoicing, tax compliance, and financial reporting for cold storage operations.
 
-**Current Status**: Phase 1 (GL Foundation) complete, Tax Module implemented, Phase 2 (Inventory) 70% complete. See PROJECT_COMPLETION_ROADMAP.md for detailed progress.
+**Current Status**: Phase 1 (GL Foundation) ✅ complete, Tax Module ✅ implemented, Financial Statements ✅ implemented, Phase 2 (Inventory) ~85% complete. See PROJECT_COMPLETION_ROADMAP.md for detailed progress.
 
 ## Architecture
 
@@ -56,28 +56,35 @@ docker-compose up -d      # Start PostgreSQL + Redis
 
 ### Database Management
 After starting Docker containers:
-1. `cd backend && npm run migration:run` - Apply schema changes
+1. `cd backend && npm run migration:run` - Apply schema changes (9 migrations)
 2. `npm run seed` - Create default admin user (admin/Admin@123)
-3. Migrations are in `backend/src/database/migrations/`
+3. `npm run seed:accounts` - Seed sample chart of accounts
+4. Additional seed scripts available:
+   - `ts-node -r tsconfig-paths/register src/database/seeds/add-billing-permissions.ts`
+   - `ts-node -r tsconfig-paths/register src/database/seeds/add-financial-statements-permissions.ts`
+   - `ts-node -r tsconfig-paths/register src/database/seeds/add-invoice-permissions.ts`
+5. Migrations are in `backend/src/database/migrations/`
 
 ## Code Architecture
 
 ### Backend Module Organization
-NestJS uses a modular architecture with dependency injection. Key modules:
+NestJS uses a modular architecture with dependency injection. **15 core modules**:
 
-- **auth/** - JWT authentication, token refresh, guards (JwtGuard, PermissionsGuard, RolesGuard)
-- **users/** - User/Role/Permission management (RBAC)
-- **accounts/** - Chart of Accounts with hierarchical structure
-- **vouchers/** - Journal entries (JV, BRV, CPV, BPV, CRV, CPV, CON)
-- **general-ledger/** - GL reports, trial balance, account ledger
-- **customers/** - Customer master data
-- **fiscal-periods/** - Fiscal year/period management with locking
+- **auth/** - JWT authentication, token refresh, guards (JwtGuard, PermissionsGuard, RolesGuard), decorators (@CurrentUser, @Permissions, @Roles, @Public)
+- **users/** - User/Role/Permission management (RBAC), refresh token handling
+- **accounts/** - Chart of Accounts with hierarchical structure, account categories and natures
+- **vouchers/** - Journal entries (JV, BRV, CPV, BPV, CRV, CON), double-entry validation
+- **general-ledger/** - GL reports, trial balance, account ledger queries
+- **customers/** - Customer master data with account linking
+- **fiscal-periods/** - Fiscal year/period management with locking mechanisms
 - **cost-centers/** - Cost center tracking for management accounting
-- **inventory/** - Stock management (items, transactions, balances, cost layers)
-- **tax/** - FBR tax rates, exemptions, GST/WHT calculations
-- **billing/** - Cold storage billing (per-kg-per-day calculations)
-- **invoices/** - Invoice generation with PDF export
-- **common/** - Shared enums, exceptions, decorators
+- **inventory/** - Stock management (items, transactions, balances, FIFO cost layers, warehouses, rooms)
+- **tax/** - FBR tax rates, exemptions, configurations, GST/WHT/Sales Tax/FED calculations
+- **billing/** - Cold storage billing (per-kg-per-day calculations, seasonal rates, volume discounts)
+- **invoices/** - Invoice generation with PDF export (PDFKit), line items, tax integration
+- **financial-statements/** - **[NEW]** Balance Sheet, Income Statement (P&L), Cash Flow Statement, Financial Analysis
+- **database/** - Migrations (9 files) and seeds (5 files)
+- **common/** - Shared enums (13 types), exceptions, decorators, interfaces, entity configurations
 
 ### Key Backend Patterns
 
@@ -162,10 +169,22 @@ NestJS uses a modular architecture with dependency injection. Key modules:
 5. **Toast Notifications**: Use Sonner for user feedback
 
 ### Testing
-- Backend: Jest unit tests (`.spec.ts` files)
-- Frontend: No tests currently (setup ready)
-- E2E: Jest E2E config in `backend/test/`
+- Backend: Jest unit tests (`.spec.ts` files) - 5 test files:
+  - `auth.controller.spec.ts`, `auth.service.spec.ts`
+  - `storage-billing.service.spec.ts`
+  - `users.service.spec.ts`
+  - `app.controller.spec.ts`
+- Frontend: No tests currently (setup ready via Vite)
+- E2E: Jest E2E config in `backend/test/` with `app.e2e-spec.ts`
 - Run tests before creating PRs
+
+### CI/CD Pipeline
+- **GitHub Actions** workflow in `.github/workflows/ci.yml`
+- Three jobs run on push/PR to main/develop:
+  1. **backend-test** - Lint, unit tests, E2E tests (with PostgreSQL + Redis services)
+  2. **frontend-test** - Lint, build validation
+  3. **code-quality** - Prettier format check
+- **Husky pre-commit hooks** - Auto-format with Prettier via lint-staged
 
 ### Code Quality
 - ESLint enforced on both frontend/backend
@@ -184,7 +203,8 @@ NestJS uses a modular architecture with dependency injection. Key modules:
 - FIFO cost layer method
 - Inward transactions create cost layers
 - Outward transactions consume from oldest layers first
-- Service: `inventory-cost-layers.service.ts`
+- Warehouse and room-based inventory tracking
+- Services: `fifo-costing.service.ts`, `inventory-gl.service.ts`
 
 ### Storage Billing
 - Per-kg-per-day calculation: `(weight * days * rate_per_kg_per_day)`
@@ -203,7 +223,16 @@ NestJS uses a modular architecture with dependency injection. Key modules:
 - Apply storage billing + labour charges
 - Calculate taxes (GST/WHT)
 - PDF generation via PDFKit
-- Module: `invoices/` (newly implemented)
+- Line item support with detailed breakdowns
+- Services: `invoices.service.ts`, `invoice-pdf.service.ts`
+
+### Financial Statements
+- **Balance Sheet** - Assets, Liabilities, Equity with hierarchical grouping
+- **Income Statement** - Revenue, Expenses, Net Income/Loss (P&L)
+- **Cash Flow Statement** - Operating, Investing, Financing activities
+- **Financial Analysis** - Ratios, trends, KPIs
+- All statements support date range filtering and fiscal period selection
+- Module: `financial-statements/` (recently implemented)
 
 ## Common Issues & Solutions
 
@@ -264,10 +293,13 @@ After running `npm run seed`:
 - `src/app.module.ts` - Main application module with TypeORM config
 - `src/main.ts` - Application bootstrap, Swagger setup, CORS
 - `src/auth/jwt.strategy.ts` - JWT validation strategy
-- `src/auth/guards/` - Authorization guards
-- `src/common/enums/` - Shared enum definitions
-- `src/database/migrations/` - Database schema evolution
-- `src/database/seeds/seed.ts` - Initial data setup
+- `src/auth/guards/` - Authorization guards (JWT, Permissions, Roles)
+- `src/auth/decorators/` - Custom decorators (@CurrentUser, @Permissions, @Roles, @Public)
+- `src/common/enums/` - Shared enum definitions (13 enum files)
+- `src/common/entities/` - Shared entity configurations (GL accounts, billing rates)
+- `src/database/migrations/` - Database schema evolution (9 migrations)
+- `src/database/seeds/` - Initial data setup (5 seed files)
+- `src/financial-statements/` - Financial reporting services (Balance Sheet, P&L, Cash Flow)
 
 ### Frontend
 - `src/App.tsx` - Router configuration
@@ -278,19 +310,56 @@ After running `npm run seed`:
 ## Project Roadmap
 See `PROJECT_COMPLETION_ROADMAP.md` for detailed 6-week completion plan.
 
+**Recently Completed** (Latest commits):
+- ✅ Financial Statements Module (Balance Sheet, P&L, Cash Flow, Analysis)
+- ✅ Tax Module with FBR compliance
+- ✅ Invoice generation with PDF export
+- ✅ Storage billing calculations
+
 **Current Priorities**:
-1. Storage billing calculator (Week 1)
-2. Financial statements (Balance Sheet, P&L) (Week 2)
-3. Invoice generation completion (Week 3)
-4. AR/AP sub-ledgers (Week 5)
-5. Period closing workflows (Week 6)
+1. AR/AP sub-ledgers implementation
+2. Period closing workflows
+3. Reporting enhancements
+4. Additional financial analysis features
+
+**Phase Status**:
+- Phase 1 (GL Foundation): ✅ Complete
+- Tax Module: ✅ Complete
+- Financial Statements: ✅ Complete
+- Phase 2 (Inventory GL Integration): ~85% complete
+
+## Documentation Resources
+
+The project includes **19 comprehensive documentation files**:
+- **Project Guides**: CLAUDE.md (this file), PROJECT_COMPLETION_ROADMAP.md, IMPLEMENTATION_PLAN.md
+- **Authentication**: AUTHENTICATION_GUIDE.md
+- **Accounting System**: ACCOUNTING_SYSTEM_COMPLETE_ROADMAP.md, ACCOUNTING_SYSTEM_REVIEW.md, ACCOUNTING_SYSTEM_REVIEW_PART2_SUBLEDGERS.md
+- **Tax Module**: TAX_MODULE_IMPLEMENTATION_SUMMARY.md, TAX_MODULE_FRONTEND_SUMMARY.md, TAX_MODULE_TESTING_REPORT.md
+- **Audit Reports**: COMPREHENSIVE_ERP_AUDIT_REPORT.md (57KB), CODE_QUALITY_FIXES_PROGRESS.md
+- **Weekly Progress**: WEEK1_DAY1_IMPLEMENTATION.md, WEEK1_DAY1_PROGRESS.md, WEEK1_DAY2_PROGRESS.md
+
+Refer to these documents for detailed implementation guides and architectural decisions.
+
+## Project Statistics
+- **242 TypeScript/TSX files** (210 .ts, 32 .tsx)
+- **15 backend modules** with 23 entities
+- **14 frontend pages** with comprehensive CRUD interfaces
+- **9 database migrations** with 5 seed scripts
+- **5 Jest test files** with E2E test suite
+- **19 documentation files** (total ~250KB of docs)
 
 ## Notes for AI Assistants
 - This is an active project under development
-- Phase 1 (GL Foundation) is complete and stable
-- Phase 2 (Inventory GL Integration) is 70% complete
-- New features should follow existing patterns
+- Phase 1 (GL Foundation) is ✅ complete and stable
+- Tax Module is ✅ complete with FBR compliance
+- Financial Statements Module is ✅ complete (recently added)
+- Phase 2 (Inventory GL Integration) is ~85% complete
+- New features should follow existing patterns (see modules for reference)
 - Always test with real accounting scenarios
 - Validate calculations with business users
 - FBR (Pakistan tax authority) compliance is critical
-- Never break double-entry accounting rules
+- Never break double-entry accounting rules (debits = credits)
+- Use migrations for schema changes (never `synchronize: true`)
+- Follow the established DTO validation patterns (class-validator)
+- All API endpoints must have Swagger documentation
+- Check existing documentation files before implementing features
