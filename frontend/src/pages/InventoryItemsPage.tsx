@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, Search, Pencil, Trash2, Package, DollarSign } from 'lucide-react';
 import { inventoryService } from '../services/inventory';
-import { 
-  InventoryItem, 
-  CreateInventoryItemDto, 
-  UpdateInventoryItemDto, 
+import {
+  type InventoryItem,
+  type CreateInventoryItemDto,
+  type UpdateInventoryItemDto,
   UnitOfMeasure,
-  QueryInventoryItemsDto 
+  type QueryInventoryItemsDto
 } from '../types/inventory';
 
 // Form validation schema
@@ -19,7 +19,7 @@ const itemSchema = z.object({
   description: z.string().optional(),
   category: z.string().optional(),
   unitOfMeasure: z.nativeEnum(UnitOfMeasure),
-  isPerishable: z.boolean().default(false),
+  isPerishable: z.boolean().optional(),
   shelfLifeDays: z.number().min(0).optional(),
   minTemperature: z.number().optional(),
   maxTemperature: z.number().optional(),
@@ -36,7 +36,7 @@ const InventoryItemsPage: React.FC = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -82,7 +82,7 @@ const InventoryItemsPage: React.FC = () => {
   }, [searchTerm, selectedCategory]);
 
   // Create or update item
-  const onSubmit = async (data: ItemFormData) => {
+  const onSubmit: SubmitHandler<ItemFormData> = async (data) => {
     try {
       if (editingItem) {
         // Update existing item
@@ -93,7 +93,7 @@ const InventoryItemsPage: React.FC = () => {
         const createData: CreateInventoryItemDto = { ...data };
         await inventoryService.items.createItem(createData);
       }
-      
+
       setShowDialog(false);
       setEditingItem(null);
       reset();
@@ -271,11 +271,10 @@ const InventoryItemsPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-1">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                            item.isActive 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${item.isActive
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                            }`}>
                             {item.isActive ? 'Active' : 'Inactive'}
                           </span>
                           {item.isPerishable && (
@@ -348,7 +347,7 @@ const InventoryItemsPage: React.FC = () => {
               <h2 className="text-xl font-semibold mb-4">
                 {editingItem ? 'Edit Item' : 'Create New Item'}
               </h2>
-              
+
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   {/* SKU */}

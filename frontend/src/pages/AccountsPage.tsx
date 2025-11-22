@@ -16,7 +16,7 @@ import {
 } from '../components/ui/Table';
 import { AccountSelector } from '../components/AccountSelector';
 import { accountsService } from '../services/accountsService';
-import type { Account, CreateAccountDto, AccountType, AccountNature, AccountCategory } from '../types/account';
+import type { Account, CreateAccountDto, UpdateAccountDto, AccountType, AccountNature, AccountCategory } from '../types/account';
 import { AccountSubCategory, FinancialStatement } from '../types/account';
 
 // Validation schema
@@ -27,13 +27,13 @@ const accountSchema = z.object({
   accountType: z.enum(['CONTROL', 'SUB_CONTROL', 'DETAIL']),
   nature: z.enum(['DEBIT', 'CREDIT']),
   category: z.enum(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']),
-  
+
   // New Phase 1 fields
   subCategory: z.nativeEnum(AccountSubCategory).optional().nullable(),
   financialStatement: z.nativeEnum(FinancialStatement).optional().nullable(),
   statementSection: z.string().optional().nullable(),
   displayOrder: z.number().min(0).optional(),
-  
+
   // Behavior flags
   isCashAccount: z.boolean().optional(),
   isBankAccount: z.boolean().optional(),
@@ -41,7 +41,7 @@ const accountSchema = z.object({
   requireCostCenter: z.boolean().optional(),
   requireProject: z.boolean().optional(),
   allowDirectPosting: z.boolean().optional(),
-  
+
   openingBalance: z.number().min(0).optional(),
 });
 
@@ -102,14 +102,14 @@ export const AccountsPage = () => {
   const onSubmit = async (data: AccountFormData) => {
     try {
       setError(null);
-      
+
       // Prepare submit data
       const submitData = { ...data };
-      
+
       if (editingAccount) {
         // When editing, remove code field (not allowed in update)
         delete submitData.code;
-        await accountsService.updateAccount(editingAccount.id, submitData);
+        await accountsService.updateAccount(editingAccount.id, submitData as UpdateAccountDto);
       } else {
         // When creating, remove empty code field so backend can auto-generate
         if (!submitData.code || submitData.code.trim() === '') {
@@ -117,7 +117,7 @@ export const AccountsPage = () => {
         }
         await accountsService.createAccount(submitData as CreateAccountDto);
       }
-      
+
       await loadAccounts();
       await loadAccountTree();
       setShowForm(false);
@@ -176,9 +176,8 @@ export const AccountsPage = () => {
             </span>
           </div>
           <div className="flex gap-2">
-            <span className={`px-2 py-1 rounded text-xs ${
-              account.nature === 'DEBIT' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-            }`}>
+            <span className={`px-2 py-1 rounded text-xs ${account.nature === 'DEBIT' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+              }`}>
               {account.nature}
             </span>
             <span className="px-2 py-1 rounded text-xs bg-gray-100">
@@ -510,9 +509,8 @@ export const AccountsPage = () => {
                       <TableCell>{account.name}</TableCell>
                       <TableCell>{account.accountType}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          account.nature === 'DEBIT' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded text-xs ${account.nature === 'DEBIT' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                          }`}>
                           {account.nature}
                         </span>
                       </TableCell>

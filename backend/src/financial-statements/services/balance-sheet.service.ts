@@ -3,7 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Account } from '../../accounts/entities/account.entity';
 import { VoucherDetail } from '../../vouchers/entities';
-import { AccountCategory, AccountSubCategory, AccountNature } from '../../common/enums';
+import { AccountCategory } from '../../common/enums/account-category.enum';
+import { AccountSubCategory } from '../../common/enums/account-sub-category.enum';
+import { AccountNature } from '../../common/enums/account-nature.enum';
 import {
   BalanceSheet,
   StatementSection,
@@ -206,7 +208,7 @@ export class BalanceSheetService {
   }
 
   /**
-   * Build Current Assets section
+   * Build Current Assets section (IAS 1 compliant)
    */
   private async buildCurrentAssetsSection(
     accounts: Map<string, any>,
@@ -222,7 +224,7 @@ export class BalanceSheetService {
         item.account.subCategory === AccountSubCategory.CURRENT_ASSET,
     );
 
-    // Cash and Cash Equivalents
+    // 1. Cash and Cash Equivalents (IAS 7)
     const cashAccounts = currentAssetAccounts.filter((item) =>
       item.account.isCashAccount || item.account.isBankAccount,
     );
@@ -231,13 +233,14 @@ export class BalanceSheetService {
       const cashTotal = cashAccounts.reduce((sum, item) => sum + item.balance, 0);
       lineItems.push({
         code: 'CA-CASH',
-        label: 'Cash and Cash Equivalents',
+        label: 'Cash and cash equivalents',
         amount: cashTotal,
         level: 1,
         isTotal: false,
-        isBold: true,
+        isBold: false,
         isCalculated: true,
         accountCodes: cashAccounts.map((item) => item.account.code),
+        notes: 'Note 1',
       });
       subtotal += cashTotal;
 
@@ -245,7 +248,7 @@ export class BalanceSheetService {
         cashAccounts.forEach((item) => {
           lineItems.push({
             code: item.account.code,
-            label: `  ${item.account.name}`,
+            label: item.account.name,
             amount: item.balance,
             level: 2,
             isTotal: false,
@@ -257,67 +260,145 @@ export class BalanceSheetService {
       }
     }
 
-    // Accounts Receivable
+    // 2. Trade and Other Receivables (IAS 1)
     const arAccounts = currentAssetAccounts.filter(
-      (item) => item.account.code.includes('Receivable') || item.account.name.includes('Receivable'),
+      (item) =>
+        item.account.code.includes('Receivable') ||
+        item.account.name.toLowerCase().includes('receivable') ||
+        item.account.name.toLowerCase().includes('debtors'),
     );
 
     if (arAccounts.length > 0) {
       const arTotal = arAccounts.reduce((sum, item) => sum + item.balance, 0);
       lineItems.push({
         code: 'CA-AR',
-        label: 'Accounts Receivable',
+        label: 'Trade and other receivables',
         amount: arTotal,
         level: 1,
         isTotal: false,
-        isBold: true,
+        isBold: false,
         isCalculated: true,
         accountCodes: arAccounts.map((item) => item.account.code),
+        notes: 'Note 2',
       });
       subtotal += arTotal;
+
+      if (dto.detailed) {
+        arAccounts.forEach((item) => {
+          lineItems.push({
+            code: item.account.code,
+            label: item.account.name,
+            amount: item.balance,
+            level: 2,
+            isTotal: false,
+            isBold: false,
+            isCalculated: false,
+            accountCodes: [item.account.code],
+          });
+        });
+      }
     }
 
-    // Inventory (if exists)
+    // 3. Inventories (IAS 2)
     const inventoryAccounts = currentAssetAccounts.filter(
-      (item) => item.account.name.toLowerCase().includes('inventory'),
+      (item) =>
+        item.account.name.toLowerCase().includes('inventory') ||
+        item.account.name.toLowerCase().includes('stock'),
     );
 
     if (inventoryAccounts.length > 0) {
       const inventoryTotal = inventoryAccounts.reduce((sum, item) => sum + item.balance, 0);
       lineItems.push({
         code: 'CA-INV',
-        label: 'Inventory',
+        label: 'Inventories',
         amount: inventoryTotal,
         level: 1,
         isTotal: false,
-        isBold: true,
+        isBold: false,
         isCalculated: true,
         accountCodes: inventoryAccounts.map((item) => item.account.code),
+        notes: 'Note 3',
       });
       subtotal += inventoryTotal;
+
+      if (dto.detailed) {
+        inventoryAccounts.forEach((item) => {
+          lineItems.push({
+            code: item.account.code,
+            label: item.account.name,
+            amount: item.balance,
+            level: 2,
+            isTotal: false,
+            isBold: false,
+            isCalculated: false,
+            accountCodes: [item.account.code],
+          });
+        });
+      }
     }
 
-    // Other Current Assets
+    // 4. Prepayments and Other Current Assets
+    const prepaymentAccounts = currentAssetAccounts.filter(
+      (item) =>
+        item.account.name.toLowerCase().includes('prepaid') ||
+        item.account.name.toLowerCase().includes('prepayment') ||
+        item.account.name.toLowerCase().includes('advance'),
+    );
+
+    if (prepaymentAccounts.length > 0) {
+      const prepaymentTotal = prepaymentAccounts.reduce((sum, item) => sum + item.balance, 0);
+      lineItems.push({
+        code: 'CA-PREPAY',
+        label: 'Prepayments and advances',
+        amount: prepaymentTotal,
+        level: 1,
+        isTotal: false,
+        isBold: false,
+        isCalculated: true,
+        accountCodes: prepaymentAccounts.map((item) => item.account.code),
+        notes: 'Note 4',
+      });
+      subtotal += prepaymentTotal;
+    }
+
+    // 5. Other Current Assets
     const otherCurrentAssets = currentAssetAccounts.filter(
       (item) =>
         !cashAccounts.includes(item) &&
         !arAccounts.includes(item) &&
-        !inventoryAccounts.includes(item),
+        !inventoryAccounts.includes(item) &&
+        !prepaymentAccounts.includes(item),
     );
 
     if (otherCurrentAssets.length > 0) {
       const otherTotal = otherCurrentAssets.reduce((sum, item) => sum + item.balance, 0);
       lineItems.push({
         code: 'CA-OTHER',
-        label: 'Other Current Assets',
+        label: 'Other current assets',
         amount: otherTotal,
         level: 1,
         isTotal: false,
-        isBold: true,
+        isBold: false,
         isCalculated: true,
         accountCodes: otherCurrentAssets.map((item) => item.account.code),
+        notes: 'Note 5',
       });
       subtotal += otherTotal;
+
+      if (dto.detailed) {
+        otherCurrentAssets.forEach((item) => {
+          lineItems.push({
+            code: item.account.code,
+            label: item.account.name,
+            amount: item.balance,
+            level: 2,
+            isTotal: false,
+            isBold: false,
+            isCalculated: false,
+            accountCodes: [item.account.code],
+          });
+        });
+      }
     }
 
     return {
@@ -325,12 +406,12 @@ export class BalanceSheetService {
       title: 'Current Assets',
       lineItems,
       subtotal,
-      order: 1,
+      order: 2, // Current assets shown after non-current in IAS 1
     };
   }
 
   /**
-   * Build Non-Current Assets section
+   * Build Non-Current Assets section (IAS 1 compliant)
    */
   private async buildNonCurrentAssetsSection(
     accounts: Map<string, any>,
@@ -339,7 +420,7 @@ export class BalanceSheetService {
     const lineItems: StatementLineItem[] = [];
     let subtotal = 0;
 
-    // Fixed Assets
+    // 1. Property, Plant and Equipment (IAS 16)
     const fixedAssets = Array.from(accounts.values()).filter(
       (item) =>
         item.account.category === AccountCategory.ASSET &&
@@ -350,14 +431,15 @@ export class BalanceSheetService {
     if (fixedAssets.length > 0) {
       const fixedTotal = fixedAssets.reduce((sum, item) => sum + item.balance, 0);
       lineItems.push({
-        code: 'NCA-FIXED',
-        label: 'Property, Plant & Equipment',
+        code: 'NCA-PPE',
+        label: 'Property, plant and equipment',
         amount: fixedTotal,
         level: 1,
         isTotal: false,
-        isBold: true,
+        isBold: false,
         isCalculated: true,
         accountCodes: fixedAssets.map((item) => item.account.code),
+        notes: 'Note 6',
       });
       subtotal += fixedTotal;
 
@@ -365,7 +447,7 @@ export class BalanceSheetService {
         fixedAssets.forEach((item) => {
           lineItems.push({
             code: item.account.code,
-            label: `  ${item.account.name}`,
+            label: item.account.name,
             amount: item.balance,
             level: 2,
             isTotal: false,
@@ -377,7 +459,7 @@ export class BalanceSheetService {
       }
     }
 
-    // Intangible Assets
+    // 2. Intangible Assets (IAS 38)
     const intangibleAssets = Array.from(accounts.values()).filter(
       (item) =>
         item.account.category === AccountCategory.ASSET &&
@@ -388,15 +470,79 @@ export class BalanceSheetService {
       const intangibleTotal = intangibleAssets.reduce((sum, item) => sum + item.balance, 0);
       lineItems.push({
         code: 'NCA-INTANGIBLE',
-        label: 'Intangible Assets',
+        label: 'Intangible assets',
         amount: intangibleTotal,
         level: 1,
         isTotal: false,
-        isBold: true,
+        isBold: false,
         isCalculated: true,
         accountCodes: intangibleAssets.map((item) => item.account.code),
+        notes: 'Note 7',
       });
       subtotal += intangibleTotal;
+
+      if (dto.detailed) {
+        intangibleAssets.forEach((item) => {
+          lineItems.push({
+            code: item.account.code,
+            label: item.account.name,
+            amount: item.balance,
+            level: 2,
+            isTotal: false,
+            isBold: false,
+            isCalculated: false,
+            accountCodes: [item.account.code],
+          });
+        });
+      }
+    }
+
+    // 3. Long-term Investments (if any)
+    const investmentAccounts = Array.from(accounts.values()).filter(
+      (item) =>
+        item.account.category === AccountCategory.ASSET &&
+        (item.account.name.toLowerCase().includes('investment') ||
+          item.account.name.toLowerCase().includes('securities')) &&
+        item.account.subCategory === AccountSubCategory.NON_CURRENT_ASSET,
+    );
+
+    if (investmentAccounts.length > 0) {
+      const investmentTotal = investmentAccounts.reduce((sum, item) => sum + item.balance, 0);
+      lineItems.push({
+        code: 'NCA-INV',
+        label: 'Long-term investments',
+        amount: investmentTotal,
+        level: 1,
+        isTotal: false,
+        isBold: false,
+        isCalculated: true,
+        accountCodes: investmentAccounts.map((item) => item.account.code),
+        notes: 'Note 8',
+      });
+      subtotal += investmentTotal;
+    }
+
+    // 4. Deferred Tax Assets (IAS 12)
+    const deferredTaxAssets = Array.from(accounts.values()).filter(
+      (item) =>
+        item.account.category === AccountCategory.ASSET &&
+        item.account.name.toLowerCase().includes('deferred tax'),
+    );
+
+    if (deferredTaxAssets.length > 0) {
+      const deferredTaxTotal = deferredTaxAssets.reduce((sum, item) => sum + item.balance, 0);
+      lineItems.push({
+        code: 'NCA-DTA',
+        label: 'Deferred tax assets',
+        amount: deferredTaxTotal,
+        level: 1,
+        isTotal: false,
+        isBold: false,
+        isCalculated: true,
+        accountCodes: deferredTaxAssets.map((item) => item.account.code),
+        notes: 'Note 9',
+      });
+      subtotal += deferredTaxTotal;
     }
 
     return {
@@ -404,12 +550,12 @@ export class BalanceSheetService {
       title: 'Non-Current Assets',
       lineItems,
       subtotal,
-      order: 2,
+      order: 1, // Non-current assets shown first in IAS 1
     };
   }
 
   /**
-   * Build Current Liabilities section
+   * Build Current Liabilities section (IAS 1 compliant)
    */
   private async buildCurrentLiabilitiesSection(
     accounts: Map<string, any>,
@@ -424,42 +570,137 @@ export class BalanceSheetService {
         item.account.subCategory === AccountSubCategory.CURRENT_LIABILITY,
     );
 
-    // Accounts Payable
+    // 1. Trade and Other Payables (IAS 1)
     const apAccounts = currentLiabilities.filter(
-      (item) => item.account.code.includes('Payable') || item.account.name.includes('Payable'),
+      (item) =>
+        item.account.code.includes('Payable') ||
+        item.account.name.toLowerCase().includes('payable') ||
+        item.account.name.toLowerCase().includes('creditors'),
     );
 
     if (apAccounts.length > 0) {
       const apTotal = apAccounts.reduce((sum, item) => sum + item.balance, 0);
       lineItems.push({
         code: 'CL-AP',
-        label: 'Accounts Payable',
+        label: 'Trade and other payables',
         amount: apTotal,
         level: 1,
         isTotal: false,
-        isBold: true,
+        isBold: false,
         isCalculated: true,
         accountCodes: apAccounts.map((item) => item.account.code),
+        notes: 'Note 10',
       });
       subtotal += apTotal;
+
+      if (dto.detailed) {
+        apAccounts.forEach((item) => {
+          lineItems.push({
+            code: item.account.code,
+            label: item.account.name,
+            amount: item.balance,
+            level: 2,
+            isTotal: false,
+            isBold: false,
+            isCalculated: false,
+            accountCodes: [item.account.code],
+          });
+        });
+      }
     }
 
-    // Other Current Liabilities
+    // 2. Short-term Borrowings
+    const shortTermDebt = currentLiabilities.filter(
+      (item) =>
+        item.account.name.toLowerCase().includes('loan') ||
+        item.account.name.toLowerCase().includes('borrowing') ||
+        item.account.name.toLowerCase().includes('overdraft'),
+    );
+
+    if (shortTermDebt.length > 0) {
+      const debtTotal = shortTermDebt.reduce((sum, item) => sum + item.balance, 0);
+      lineItems.push({
+        code: 'CL-DEBT',
+        label: 'Short-term borrowings',
+        amount: debtTotal,
+        level: 1,
+        isTotal: false,
+        isBold: false,
+        isCalculated: true,
+        accountCodes: shortTermDebt.map((item) => item.account.code),
+        notes: 'Note 11',
+      });
+      subtotal += debtTotal;
+    }
+
+    // 3. Current Tax Liabilities (IAS 12)
+    const taxLiabilities = currentLiabilities.filter(
+      (item) =>
+        item.account.name.toLowerCase().includes('tax payable') ||
+        item.account.name.toLowerCase().includes('income tax') ||
+        item.account.name.toLowerCase().includes('sales tax'),
+    );
+
+    if (taxLiabilities.length > 0) {
+      const taxTotal = taxLiabilities.reduce((sum, item) => sum + item.balance, 0);
+      lineItems.push({
+        code: 'CL-TAX',
+        label: 'Current tax liabilities',
+        amount: taxTotal,
+        level: 1,
+        isTotal: false,
+        isBold: false,
+        isCalculated: true,
+        accountCodes: taxLiabilities.map((item) => item.account.code),
+        notes: 'Note 12',
+      });
+      subtotal += taxTotal;
+    }
+
+    // 4. Accruals and Provisions
+    const accruals = currentLiabilities.filter(
+      (item) =>
+        item.account.name.toLowerCase().includes('accrual') ||
+        item.account.name.toLowerCase().includes('provision'),
+    );
+
+    if (accruals.length > 0) {
+      const accrualTotal = accruals.reduce((sum, item) => sum + item.balance, 0);
+      lineItems.push({
+        code: 'CL-ACCRUAL',
+        label: 'Accruals and provisions',
+        amount: accrualTotal,
+        level: 1,
+        isTotal: false,
+        isBold: false,
+        isCalculated: true,
+        accountCodes: accruals.map((item) => item.account.code),
+        notes: 'Note 13',
+      });
+      subtotal += accrualTotal;
+    }
+
+    // 5. Other Current Liabilities
     const otherCurrentLiabilities = currentLiabilities.filter(
-      (item) => !apAccounts.includes(item),
+      (item) =>
+        !apAccounts.includes(item) &&
+        !shortTermDebt.includes(item) &&
+        !taxLiabilities.includes(item) &&
+        !accruals.includes(item),
     );
 
     if (otherCurrentLiabilities.length > 0) {
       const otherTotal = otherCurrentLiabilities.reduce((sum, item) => sum + item.balance, 0);
       lineItems.push({
         code: 'CL-OTHER',
-        label: 'Other Current Liabilities',
+        label: 'Other current liabilities',
         amount: otherTotal,
         level: 1,
         isTotal: false,
-        isBold: true,
+        isBold: false,
         isCalculated: true,
         accountCodes: otherCurrentLiabilities.map((item) => item.account.code),
+        notes: 'Note 14',
       });
       subtotal += otherTotal;
 
@@ -467,7 +708,7 @@ export class BalanceSheetService {
         otherCurrentLiabilities.forEach((item) => {
           lineItems.push({
             code: item.account.code,
-            label: `  ${item.account.name}`,
+            label: item.account.name,
             amount: item.balance,
             level: 2,
             isTotal: false,
@@ -484,12 +725,12 @@ export class BalanceSheetService {
       title: 'Current Liabilities',
       lineItems,
       subtotal,
-      order: 1,
+      order: 2, // Current liabilities after non-current in IAS 1
     };
   }
 
   /**
-   * Build Non-Current Liabilities section
+   * Build Non-Current Liabilities section (IAS 1 compliant)
    */
   private async buildNonCurrentLiabilitiesSection(
     accounts: Map<string, any>,
@@ -504,25 +745,118 @@ export class BalanceSheetService {
         item.account.subCategory === AccountSubCategory.NON_CURRENT_LIABILITY,
     );
 
-    if (nonCurrentLiabilities.length > 0) {
-      const total = nonCurrentLiabilities.reduce((sum, item) => sum + item.balance, 0);
+    // 1. Long-term Borrowings
+    const longTermDebt = nonCurrentLiabilities.filter(
+      (item) =>
+        item.account.name.toLowerCase().includes('loan') ||
+        item.account.name.toLowerCase().includes('debt') ||
+        item.account.name.toLowerCase().includes('borrowing') ||
+        item.account.name.toLowerCase().includes('bonds'),
+    );
+
+    if (longTermDebt.length > 0) {
+      const debtTotal = longTermDebt.reduce((sum, item) => sum + item.balance, 0);
       lineItems.push({
-        code: 'NCL-LONGTERM',
-        label: 'Long-term Debt',
-        amount: total,
+        code: 'NCL-DEBT',
+        label: 'Long-term borrowings',
+        amount: debtTotal,
         level: 1,
         isTotal: false,
-        isBold: true,
+        isBold: false,
         isCalculated: true,
-        accountCodes: nonCurrentLiabilities.map((item) => item.account.code),
+        accountCodes: longTermDebt.map((item) => item.account.code),
+        notes: 'Note 15',
       });
-      subtotal += total;
+      subtotal += debtTotal;
 
       if (dto.detailed) {
-        nonCurrentLiabilities.forEach((item) => {
+        longTermDebt.forEach((item) => {
           lineItems.push({
             code: item.account.code,
-            label: `  ${item.account.name}`,
+            label: item.account.name,
+            amount: item.balance,
+            level: 2,
+            isTotal: false,
+            isBold: false,
+            isCalculated: false,
+            accountCodes: [item.account.code],
+          });
+        });
+      }
+    }
+
+    // 2. Deferred Tax Liabilities (IAS 12)
+    const deferredTaxLiabilities = nonCurrentLiabilities.filter(
+      (item) => item.account.name.toLowerCase().includes('deferred tax'),
+    );
+
+    if (deferredTaxLiabilities.length > 0) {
+      const deferredTaxTotal = deferredTaxLiabilities.reduce((sum, item) => sum + item.balance, 0);
+      lineItems.push({
+        code: 'NCL-DTL',
+        label: 'Deferred tax liabilities',
+        amount: deferredTaxTotal,
+        level: 1,
+        isTotal: false,
+        isBold: false,
+        isCalculated: true,
+        accountCodes: deferredTaxLiabilities.map((item) => item.account.code),
+        notes: 'Note 16',
+      });
+      subtotal += deferredTaxTotal;
+    }
+
+    // 3. Long-term Provisions (IAS 37)
+    const longTermProvisions = nonCurrentLiabilities.filter(
+      (item) =>
+        item.account.name.toLowerCase().includes('provision') &&
+        !item.account.name.toLowerCase().includes('current'),
+    );
+
+    if (longTermProvisions.length > 0) {
+      const provisionTotal = longTermProvisions.reduce((sum, item) => sum + item.balance, 0);
+      lineItems.push({
+        code: 'NCL-PROV',
+        label: 'Long-term provisions',
+        amount: provisionTotal,
+        level: 1,
+        isTotal: false,
+        isBold: false,
+        isCalculated: true,
+        accountCodes: longTermProvisions.map((item) => item.account.code),
+        notes: 'Note 17',
+      });
+      subtotal += provisionTotal;
+    }
+
+    // 4. Other Non-Current Liabilities
+    const otherNonCurrentLiabilities = nonCurrentLiabilities.filter(
+      (item) =>
+        !longTermDebt.includes(item) &&
+        !deferredTaxLiabilities.includes(item) &&
+        !longTermProvisions.includes(item),
+    );
+
+    if (otherNonCurrentLiabilities.length > 0) {
+      const otherTotal = otherNonCurrentLiabilities.reduce((sum, item) => sum + item.balance, 0);
+      lineItems.push({
+        code: 'NCL-OTHER',
+        label: 'Other non-current liabilities',
+        amount: otherTotal,
+        level: 1,
+        isTotal: false,
+        isBold: false,
+        isCalculated: true,
+        accountCodes: otherNonCurrentLiabilities.map((item) => item.account.code),
+        notes: 'Note 18',
+      });
+      subtotal += otherTotal;
+
+      if (dto.detailed) {
+        otherNonCurrentLiabilities.forEach((item) => {
+          lineItems.push({
+            code: item.account.code,
+            label: item.account.name,
             amount: item.balance,
             level: 2,
             isTotal: false,
@@ -539,7 +873,7 @@ export class BalanceSheetService {
       title: 'Non-Current Liabilities',
       lineItems,
       subtotal,
-      order: 2,
+      order: 1, // Non-current liabilities shown first in IAS 1
     };
   }
 
@@ -648,7 +982,7 @@ export class BalanceSheetService {
     const query = this.voucherDetailRepository
       .createQueryBuilder('detail')
       .leftJoin('detail.voucher', 'voucher')
-      .leftJoin('detail.account', 'account')
+      .leftJoin('accounts', 'account', 'account.code = detail.account_code')
       .select('account.category', 'category')
       .addSelect('SUM(detail.debit_amount)', 'totalDebits')
       .addSelect('SUM(detail.credit_amount)', 'totalCredits')

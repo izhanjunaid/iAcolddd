@@ -18,16 +18,16 @@ import type {
   TaxType,
   TaxApplicability,
 } from '../types/tax';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Label } from '../components/ui/Label';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '../components/ui/dialog';
+} from '../components/ui/Dialog';
 import {
   Table,
   TableBody,
@@ -35,17 +35,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../components/ui/table';
+} from '../components/ui/Table';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../components/ui/select';
-import { Checkbox } from '../components/ui/checkbox';
-import { Badge } from '../components/ui/badge';
-import { Textarea } from '../components/ui/textarea';
+} from '../components/ui/Select';
+import { Checkbox } from '../components/ui/Checkbox';
+import { Badge } from '../components/ui/Badge';
+import { Textarea } from '../components/ui/Textarea';
 
 export default function TaxRatesPage() {
   const [taxRates, setTaxRates] = useState<TaxRate[]>([]);
@@ -452,7 +452,7 @@ export default function TaxRatesPage() {
               <div>
                 <Label htmlFor="applicability">Applicability *</Label>
                 <Select
-                  defaultValue="ALL"
+                  value={watch('applicability')}
                   onValueChange={(value) => setValue('applicability', value as TaxApplicability)}
                 >
                   <SelectTrigger>

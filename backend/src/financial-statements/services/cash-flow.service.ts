@@ -3,7 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Account } from '../../accounts/entities/account.entity';
 import { VoucherDetail } from '../../vouchers/entities';
-import { AccountCategory, AccountSubCategory, AccountNature } from '../../common/enums';
+import { AccountCategory } from '../../common/enums/account-category.enum';
+import { AccountSubCategory } from '../../common/enums/account-sub-category.enum';
+import { AccountNature } from '../../common/enums/account-nature.enum';
 import {
   CashFlowStatement,
   StatementLineItem,
@@ -106,7 +108,7 @@ export class CashFlowService {
     const query = this.voucherDetailRepository
       .createQueryBuilder('detail')
       .leftJoin('detail.voucher', 'voucher')
-      .leftJoin('detail.account', 'account')
+      .leftJoin('accounts', 'account', 'account.code = detail.account_code')
       .select('account.category', 'category')
       .addSelect('SUM(detail.debit_amount)', 'totalDebits')
       .addSelect('SUM(detail.credit_amount)', 'totalCredits')
@@ -576,7 +578,7 @@ export class CashFlowService {
     const result = await this.voucherDetailRepository
       .createQueryBuilder('detail')
       .leftJoin('detail.voucher', 'voucher')
-      .leftJoin('detail.account', 'account')
+      .leftJoin('accounts', 'account', 'account.code = detail.account_code')
       .select('SUM(detail.debit_amount) - SUM(detail.credit_amount)', 'total')
       .where('account.name ILIKE :depPattern', { depPattern: '%depreciation%' })
       .orWhere('account.name ILIKE :amPattern', { amPattern: '%amortization%' })
@@ -597,7 +599,7 @@ export class CashFlowService {
     const result = await this.voucherDetailRepository
       .createQueryBuilder('detail')
       .leftJoin('detail.voucher', 'voucher')
-      .leftJoin('detail.account', 'account')
+      .leftJoin('accounts', 'account', 'account.code = detail.account_code')
       .select('SUM(detail.credit_amount) - SUM(detail.debit_amount)', 'total')
       .where('account.category = :category', { category: AccountCategory.REVENUE })
       .andWhere('voucher.voucher_date >= :periodStart', { periodStart })

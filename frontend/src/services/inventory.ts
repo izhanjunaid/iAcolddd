@@ -1,181 +1,29 @@
 // Inventory API Services
 
 import { api } from './api';
-// Temporary inline types to fix import issues
-enum UnitOfMeasure {
-  KG = 'KG',
-  GRAM = 'GRAM',
-  TON = 'TON',
-  POUND = 'POUND',
-  PIECE = 'PIECE',
-}
-
-enum InventoryTransactionType {
-  RECEIPT = 'RECEIPT',
-  ISSUE = 'ISSUE', 
-  TRANSFER = 'TRANSFER',
-  ADJUSTMENT = 'ADJUSTMENT',
-}
-
-interface CreateInventoryItemDto {
-  sku: string;
-  name: string;
-  description?: string;
-  category?: string;
-  unitOfMeasure: UnitOfMeasure;
-  isPerishable?: boolean;
-  shelfLifeDays?: number;
-  minTemperature?: number;
-  maxTemperature?: number;
-  standardCost: number;
-  notes?: string;
-}
-
-interface UpdateInventoryItemDto {
-  name?: string;
-  description?: string;
-  category?: string;
-  unitOfMeasure?: UnitOfMeasure;
-  isPerishable?: boolean;
-  shelfLifeDays?: number;
-  minTemperature?: number;
-  maxTemperature?: number;
-  standardCost?: number;
-  isActive?: boolean;
-}
-
-interface QueryInventoryItemsDto {
-  page?: number;
-  limit?: number;
-  search?: string;
-  category?: string;
-  isActive?: boolean;
-  isPerishable?: boolean;
-}
-
-interface InventoryItem {
-  id: string;
-  sku: string;
-  name: string;
-  description?: string;
-  category?: string;
-  unitOfMeasure: UnitOfMeasure;
-  isPerishable: boolean;
-  shelfLifeDays?: number;
-  minTemperature?: number;
-  maxTemperature?: number;
-  standardCost: number;
-  lastCost: number;
-  isActive: boolean;
-  createdAt: string;
-  createdBy: string;
-  updatedAt: string;
-  updatedBy?: string;
-}
-
-interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-// Simplified versions for other needed types
-interface InventoryTransaction {
-  id: string;
-  transactionNumber: string;
-  transactionType: InventoryTransactionType;
-  transactionDate: string;
-  itemId: string;
-  customerId?: string;
-  warehouseId: string;
-  roomId?: string;
-  quantity: number;
-  unitOfMeasure: UnitOfMeasure;
-  unitCost: number;
-  totalCost: number;
-  lotNumber?: string;
-  notes?: string;
-}
-
-interface CreateInventoryTransactionDto {
-  itemId: string;
-  customerId?: string;
-  warehouseId: string;
-  roomId?: string;
-  transactionType: InventoryTransactionType;
-  quantity: number;
-  unitCost?: number;
-  lotNumber?: string;
-  expiryDate?: string;
-  notes?: string;
-}
-
-interface QueryInventoryTransactionsDto {
-  page?: number;
-  limit?: number;
-  itemId?: string;
-  customerId?: string;
-  warehouseId?: string;
-  transactionType?: InventoryTransactionType;
-  startDate?: string;
-  endDate?: string;
-}
-
-interface InventoryBalance {
-  id: string;
-  itemId: string;
-  item?: InventoryItem;
-  customerId?: string;
-  warehouseId: string;
-  roomId?: string;
-  lotNumber?: string;
-  quantityOnHand: number;
-  quantityReserved: number;
-  quantityAvailable: number;
-  weightedAverageCost: number;
-  totalValue: number;
-  lastMovementDate?: string;
-  lastMovementType?: InventoryTransactionType;
-  updatedAt: string;
-}
-
-interface QueryInventoryBalancesDto {
-  page?: number;
-  limit?: number;
-  itemId?: string;
-  customerId?: string;
-  warehouseId?: string;
-  roomId?: string;
-  lotNumber?: string;
-  onlyWithStock?: boolean;
-}
-
-interface Warehouse {
-  id: string;
-  code: string;
-  name: string;
-  address?: string;
-  isActive: boolean;
-  createdAt: string;
-}
-
-interface Room {
-  id: string;
-  warehouseId: string;
-  warehouse?: Warehouse;
-  code: string;
-  name: string;
-  temperatureRange?: string;
-  capacityTons?: number;
-  isActive: boolean;
-}
+import type {
+  InventoryItem,
+  CreateInventoryItemDto,
+  UpdateInventoryItemDto,
+  QueryInventoryItemsDto,
+  InventoryTransaction,
+  CreateInventoryTransactionDto,
+  QueryInventoryTransactionsDto,
+  InventoryBalance,
+  QueryInventoryBalancesDto,
+  StockMovementReportDto,
+  StockMovementSummary,
+  InventoryValuationReportDto,
+  InventoryValuationSummary,
+  InventoryCostLayer,
+  Warehouse,
+  Room
+} from '../types/inventory';
 
 // Inventory Items API
 export const inventoryItemsApi = {
   // Get all inventory items with pagination and filtering
-  getItems: async (params?: QueryInventoryItemsDto): Promise<{ data: InventoryItem[], total: number }> => {
+  getItems: async (params?: QueryInventoryItemsDto): Promise<{ data: InventoryItem[], total: number, page: number, totalPages: number }> => {
     const response = await api.get('/inventory/items', { params });
     return response.data;
   },
@@ -207,7 +55,7 @@ export const inventoryItemsApi = {
 // Inventory Transactions API
 export const inventoryTransactionsApi = {
   // Get all inventory transactions
-  getTransactions: async (params?: QueryInventoryTransactionsDto): Promise<PaginatedResponse<InventoryTransaction>> => {
+  getTransactions: async (params?: QueryInventoryTransactionsDto): Promise<{ data: InventoryTransaction[], total: number, page: number, totalPages: number }> => {
     const response = await api.get('/inventory/transactions', { params });
     return response.data;
   },
@@ -258,7 +106,7 @@ export const inventoryTransactionsApi = {
 // Inventory Balances API
 export const inventoryBalancesApi = {
   // Get current inventory balances
-  getBalances: async (params?: QueryInventoryBalancesDto): Promise<PaginatedResponse<InventoryBalance>> => {
+  getBalances: async (params?: QueryInventoryBalancesDto): Promise<{ data: InventoryBalance[], total: number, page: number, totalPages: number }> => {
     const response = await api.get('/inventory/balances', { params });
     return response.data;
   },

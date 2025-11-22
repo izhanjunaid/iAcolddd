@@ -10,6 +10,7 @@ import { BalanceSheetService } from './services/balance-sheet.service';
 import { IncomeStatementService } from './services/income-statement.service';
 import { CashFlowService } from './services/cash-flow.service';
 import { FinancialAnalysisService } from './services/financial-analysis.service';
+import { FinancialStatementsPdfService } from './services/financial-statements-pdf.service';
 
 // Controllers
 import { BalanceSheetController } from './controllers/balance-sheet.controller';
@@ -32,6 +33,7 @@ import { FinancialAnalysisController } from './controllers/financial-analysis.co
     IncomeStatementService,
     CashFlowService,
     FinancialAnalysisService,
+    FinancialStatementsPdfService,
   ],
   exports: [
     BalanceSheetService,

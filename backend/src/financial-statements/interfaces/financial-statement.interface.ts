@@ -1,4 +1,5 @@
-import { AccountCategory, AccountSubCategory } from '../../common/enums';
+import { AccountCategory } from '../../common/enums/account-category.enum';
+import { AccountSubCategory } from '../../common/enums/account-sub-category.enum';
 
 /**
  * Base interface for all financial statements

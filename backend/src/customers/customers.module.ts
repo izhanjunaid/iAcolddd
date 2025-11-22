@@ -4,11 +4,13 @@ import { CustomersController } from './customers.controller';
 import { CustomersService } from './customers.service';
 import { Customer } from './entities/customer.entity';
 import { AccountsModule } from '../accounts/accounts.module';
+import { GeneralLedgerModule } from '../general-ledger/general-ledger.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Customer]),
     AccountsModule, // Import AccountsModule for integration
+    GeneralLedgerModule,
   ],
   controllers: [CustomersController],
   providers: [CustomersService],
@@ -17,5 +19,5 @@ import { AccountsModule } from '../accounts/accounts.module';
     TypeOrmModule, // Export TypeORM module to make CustomerRepository available
   ],
 })
-export class CustomersModule {}
+export class CustomersModule { }
 

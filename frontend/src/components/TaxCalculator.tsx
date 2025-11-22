@@ -3,24 +3,24 @@ import { useForm } from 'react-hook-form';
 import { Calculator, DollarSign, Receipt } from 'lucide-react';
 import { taxService } from '../services/tax';
 import type { TaxType, TaxCalculationResult } from '../types/tax';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
+import { Label } from './ui/Label';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from './ui/card';
+} from './ui/Card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './ui/select';
-import { Badge } from './ui/badge';
+} from './ui/Select';
+import { Badge } from './ui/Badge';
 
 interface TaxCalculatorProps {
   onCalculate?: (result: TaxCalculationResult) => void;
@@ -119,7 +119,7 @@ export function TaxCalculator({ onCalculate }: TaxCalculatorProps) {
           <div>
             <Label htmlFor="calc-taxType">Tax Type *</Label>
             <Select value={watchTaxType} onValueChange={(value) => setValue('taxType', value as TaxType)}>
-              <SelectTrigger id="calc-taxType">
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

@@ -7,9 +7,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './ui/select';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
+} from './ui/Select';
+import { Input } from './ui/Input';
+import { Label } from './ui/Label';
 
 interface CustomerSelectorProps {
   value?: string;

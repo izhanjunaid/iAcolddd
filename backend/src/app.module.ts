@@ -18,6 +18,7 @@ import { BillingModule } from './billing/billing.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { FinancialStatementsModule } from './financial-statements/financial-statements.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { BankReconciliationModule } from './bank-reconciliation/bank-reconciliation.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     BillingModule,
     InvoicesModule,
     FinancialStatementsModule,
+    BankReconciliationModule,
   ],
   controllers: [AppController],
   providers: [

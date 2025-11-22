@@ -2,28 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  Plus, 
-  ArrowDown, 
-  ArrowUp, 
-  ArrowRight, 
-  RotateCcw, 
-  TrendingUp, 
+import {
+  Plus,
+  ArrowDown,
+  ArrowUp,
+  ArrowRight,
+  RotateCcw,
+  TrendingUp,
   Calendar,
   Package,
   MapPin,
   User
 } from 'lucide-react';
 import { inventoryService } from '../services/inventory';
-import { 
-  InventoryTransaction, 
-  CreateInventoryTransactionDto,
+import {
+  type InventoryTransaction,
+  type CreateInventoryTransactionDto,
   InventoryTransactionType,
   UnitOfMeasure,
   InventoryReferenceType,
-  InventoryItem,
-  Warehouse,
-  Room
+  type InventoryItem,
+  type Warehouse,
+  type Room
 } from '../types/inventory';
 
 // Form validation schema
@@ -200,7 +200,7 @@ const InventoryTransactionsPage: React.FC = () => {
           <h1 className="text-3xl font-bold">Inventory Transactions</h1>
           <p className="text-gray-600">Process stock movements and track inventory changes</p>
         </div>
-        
+
         {/* Quick Action Buttons */}
         <div className="flex items-center gap-2">
           <button
@@ -239,7 +239,7 @@ const InventoryTransactionsPage: React.FC = () => {
         <div className="p-4 border-b">
           <h2 className="text-lg font-semibold">Recent Transactions</h2>
         </div>
-        
+
         {loading ? (
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -262,7 +262,7 @@ const InventoryTransactionsPage: React.FC = () => {
                 {transactions.map((transaction) => {
                   const typeInfo = getTransactionTypeInfo(transaction.transactionType);
                   const TypeIcon = typeInfo.icon;
-                  
+
                   return (
                     <tr key={transaction.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
@@ -279,21 +279,20 @@ const InventoryTransactionsPage: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      
+
                       <td className="px-4 py-3">
                         <div>
                           <div className="font-medium">{transaction.item?.name || 'Unknown Item'}</div>
                           <div className="text-sm text-gray-500">{transaction.item?.sku}</div>
                         </div>
                       </td>
-                      
+
                       <td className="px-4 py-3">
                         <div className="text-sm">
-                          <span className={`font-medium ${
-                            transaction.transactionType === InventoryTransactionType.ISSUE ? 'text-red-600' : 
-                            transaction.transactionType === InventoryTransactionType.RECEIPT ? 'text-green-600' : 
-                            'text-blue-600'
-                          }`}>
+                          <span className={`font-medium ${transaction.transactionType === InventoryTransactionType.ISSUE ? 'text-red-600' :
+                              transaction.transactionType === InventoryTransactionType.RECEIPT ? 'text-green-600' :
+                                'text-blue-600'
+                            }`}>
                             {transaction.transactionType === InventoryTransactionType.ISSUE ? '-' : '+'}
                             {transaction.quantity}
                           </span>
@@ -303,7 +302,7 @@ const InventoryTransactionsPage: React.FC = () => {
                           @${transaction.unitCost.toFixed(2)}
                         </div>
                       </td>
-                      
+
                       <td className="px-4 py-3 text-sm">
                         <div className="flex items-center">
                           <MapPin size={12} className="text-gray-400 mr-1" />
@@ -313,7 +312,7 @@ const InventoryTransactionsPage: React.FC = () => {
                           <div className="text-xs text-gray-500">{transaction.room.name}</div>
                         )}
                       </td>
-                      
+
                       <td className="px-4 py-3 text-sm">
                         {transaction.referenceNumber ? (
                           <div>
@@ -326,13 +325,12 @@ const InventoryTransactionsPage: React.FC = () => {
                           <span className="text-gray-400">-</span>
                         )}
                       </td>
-                      
+
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          transaction.isPostedToGl 
-                            ? 'bg-green-100 text-green-800' 
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${transaction.isPostedToGl
+                            ? 'bg-green-100 text-green-800'
                             : 'bg-yellow-100 text-yellow-800'
-                        }`}>
+                          }`}>
                           {transaction.isPostedToGl ? 'Posted to GL' : 'Pending GL'}
                         </span>
                       </td>
@@ -353,7 +351,7 @@ const InventoryTransactionsPage: React.FC = () => {
               <h2 className="text-xl font-semibold mb-4">
                 Process {getTransactionTypeInfo(selectedTransactionType).label}
               </h2>
-              
+
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   {/* Transaction Type */}
@@ -411,7 +409,7 @@ const InventoryTransactionsPage: React.FC = () => {
                     />
                     {errors.quantity && <p className="text-red-500 text-sm mt-1">{errors.quantity.message}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-1">Unit of Measure</label>
                     <select
@@ -423,7 +421,7 @@ const InventoryTransactionsPage: React.FC = () => {
                       ))}
                     </select>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-1">Unit Cost *</label>
                     <input
@@ -439,7 +437,7 @@ const InventoryTransactionsPage: React.FC = () => {
                 {/* Location Fields */}
                 <div className="border-t pt-4">
                   <h3 className="font-medium mb-2">Location Details</h3>
-                  
+
                   {isTransferType ? (
                     <div className="space-y-4">
                       {/* From Location */}
@@ -472,7 +470,7 @@ const InventoryTransactionsPage: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* To Location */}
                       <div>
                         <h4 className="text-sm font-medium mb-2">To Location</h4>
@@ -538,7 +536,7 @@ const InventoryTransactionsPage: React.FC = () => {
                 {/* Reference and Tracking */}
                 <div className="border-t pt-4">
                   <h3 className="font-medium mb-2">Reference & Tracking</h3>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-1">Reference Type</label>

@@ -12,6 +12,7 @@ import { AccountsService } from '../accounts/accounts.service';
 import { AccountType } from '../common/enums/account-type.enum';
 import { AccountNature } from '../common/enums/account-nature.enum';
 import { AccountCategory } from '../common/enums/account-category.enum';
+import { GeneralLedgerService } from '../general-ledger/general-ledger.service';
 
 @Injectable()
 export class CustomersService {
@@ -20,7 +21,8 @@ export class CustomersService {
     private customerRepository: Repository<Customer>,
     private accountsService: AccountsService,
     private dataSource: DataSource,
-  ) {}
+    private generalLedgerService: GeneralLedgerService,
+  ) { }
 
   /**
    * Create a new customer with an associated AR account
@@ -237,14 +239,14 @@ export class CustomersService {
   }> {
     const customer = await this.findOne(id);
 
-    // TODO: Integrate with GeneralLedgerService when implementing reports
-    // For now, return basic info
+    const accountBalance = await this.generalLedgerService.getAccountBalance(customer.receivableAccountId);
+
     return {
       customerId: customer.id,
       customerName: customer.name,
       accountCode: customer.receivableAccount.code,
-      balance: 0,
-      balanceType: 'DR',
+      balance: accountBalance.currentBalance,
+      balanceType: accountBalance.balanceType,
     };
   }
 

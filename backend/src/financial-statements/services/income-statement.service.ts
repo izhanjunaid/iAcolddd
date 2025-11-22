@@ -3,7 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Account } from '../../accounts/entities/account.entity';
 import { VoucherDetail } from '../../vouchers/entities';
-import { AccountCategory, AccountSubCategory } from '../../common/enums';
+import { AccountCategory } from '../../common/enums/account-category.enum';
+import { AccountSubCategory } from '../../common/enums/account-sub-category.enum';
 import {
   IncomeStatement,
   StatementSection,
@@ -47,7 +48,12 @@ export class IncomeStatementService {
     const costOfGoodsSold = await this.buildCostOfGoodsSoldSection(accounts, dto);
 
     // Calculate Gross Profit
-    const grossProfit = {
+    const grossProfit: {
+      amount: number;
+      previousAmount?: number;
+      margin: number;
+      previousMargin?: number;
+    } = {
       amount: revenue.totalRevenue - costOfGoodsSold.total,
       previousAmount: dto.includeComparison
         ? (revenue.previousTotalRevenue || 0) - (costOfGoodsSold.previousTotal || 0)
@@ -55,7 +61,6 @@ export class IncomeStatementService {
       margin: revenue.totalRevenue > 0
         ? ((revenue.totalRevenue - costOfGoodsSold.total) / revenue.totalRevenue) * 100
         : 0,
-      previousMargin: undefined,
     };
 
     if (dto.includeComparison && revenue.previousTotalRevenue) {
@@ -506,7 +511,7 @@ export class IncomeStatementService {
     const result = await this.voucherDetailRepository
       .createQueryBuilder('detail')
       .leftJoin('detail.voucher', 'voucher')
-      .leftJoin('detail.account', 'account')
+      .leftJoin('accounts', 'account', 'account.code = detail.account_code')
       .select('SUM(detail.debit_amount) - SUM(detail.credit_amount)', 'total')
       .where('account.name ILIKE :pattern', { pattern: '%depreciation%' })
       .andWhere('account.category = :category', { category: AccountCategory.EXPENSE })
@@ -530,7 +535,7 @@ export class IncomeStatementService {
     const result = await this.voucherDetailRepository
       .createQueryBuilder('detail')
       .leftJoin('detail.voucher', 'voucher')
-      .leftJoin('detail.account', 'account')
+      .leftJoin('accounts', 'account', 'account.code = detail.account_code')
       .select('SUM(detail.debit_amount) - SUM(detail.credit_amount)', 'total')
       .where('account.name ILIKE :pattern', { pattern: '%amortization%' })
       .andWhere('account.category = :category', { category: AccountCategory.EXPENSE })

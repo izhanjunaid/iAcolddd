@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Label } from '../components/ui/Label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import { AccountSelector } from '../components/AccountSelector';
 import { vouchersService } from '../services/vouchersService';
 import { accountsService } from '../services/accountsService';
@@ -15,14 +15,14 @@ export const JournalVoucherPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  
+
   // Form state
   const [voucherDate, setVoucherDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
   const [description, setDescription] = useState('');
   const [nextVoucherNumber, setNextVoucherNumber] = useState<string>('');
-  
+
   // Line items
   const [lineItems, setLineItems] = useState<VoucherLineItem[]>([
     {
@@ -72,12 +72,12 @@ export const JournalVoucherPage = () => {
     (sum, item) => sum + (Number(item.debitAmount) || 0),
     0
   );
-  
+
   const totalCredits = lineItems.reduce(
     (sum, item) => sum + (Number(item.creditAmount) || 0),
     0
   );
-  
+
   const difference = totalDebits - totalCredits;
   const isBalanced = Math.abs(difference) < 0.01; // Allow 1 cent difference for rounding
 
@@ -112,12 +112,12 @@ export const JournalVoucherPage = () => {
   // Update line item
   const updateLine = (index: number, field: keyof VoucherLineItem, value: any) => {
     const newItems = [...lineItems];
-    
+
     // Special handling for debit/credit amounts
     if (field === 'debitAmount' || field === 'creditAmount') {
       const numValue = Number(value) || 0;
       newItems[index][field] = numValue;
-      
+
       // Clear opposite field (DR and CR are mutually exclusive)
       if (field === 'debitAmount' && numValue > 0) {
         newItems[index].creditAmount = 0;
@@ -127,47 +127,47 @@ export const JournalVoucherPage = () => {
     } else {
       (newItems[index] as any)[field] = value;
     }
-    
+
     setLineItems(newItems);
   };
 
   // Validate form
   const validateForm = (): boolean => {
     setError(null);
-    
+
     // Check if voucher date is set
     if (!voucherDate) {
       setError('Voucher date is required');
       return false;
     }
-    
+
     // Check if at least 2 lines
     if (lineItems.length < 2) {
       setError('Voucher must have at least 2 line items');
       return false;
     }
-    
+
     // Check if all lines have accounts
     for (let i = 0; i < lineItems.length; i++) {
       if (!lineItems[i].accountCode) {
         setError(`Line ${i + 1}: Account is required`);
         return false;
       }
-      
+
       const debit = Number(lineItems[i].debitAmount) || 0;
       const credit = Number(lineItems[i].creditAmount) || 0;
-      
+
       if (debit === 0 && credit === 0) {
         setError(`Line ${i + 1}: Must have either debit or credit amount`);
         return false;
       }
-      
+
       if (debit > 0 && credit > 0) {
         setError(`Line ${i + 1}: Cannot have both debit and credit amounts`);
         return false;
       }
     }
-    
+
     // Check if voucher is balanced
     if (!isBalanced) {
       setError(
@@ -175,26 +175,26 @@ export const JournalVoucherPage = () => {
       );
       return false;
     }
-    
+
     // Check if has at least one debit and one credit
     const hasDebit = lineItems.some((item) => Number(item.debitAmount) > 0);
     const hasCredit = lineItems.some((item) => Number(item.creditAmount) > 0);
-    
+
     if (!hasDebit || !hasCredit) {
       setError('Voucher must have at least one debit and one credit entry');
       return false;
     }
-    
+
     return true;
   };
 
   // Save as draft
   const handleSaveDraft = async () => {
     if (!validateForm()) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       await vouchersService.createVoucher({
         voucherType: VoucherType.JOURNAL,
@@ -202,7 +202,7 @@ export const JournalVoucherPage = () => {
         description,
         details: lineItems,
       });
-      
+
       navigate('/vouchers?success=created');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to create voucher');
@@ -214,10 +214,10 @@ export const JournalVoucherPage = () => {
   // Save and post
   const handleSaveAndPost = async () => {
     if (!validateForm()) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const voucher = await vouchersService.createVoucher({
         voucherType: VoucherType.JOURNAL,
@@ -225,10 +225,10 @@ export const JournalVoucherPage = () => {
         description,
         details: lineItems,
       });
-      
+
       // Post the voucher
       await vouchersService.postVoucher(voucher.id);
-      
+
       navigate('/vouchers?success=posted');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to create and post voucher');
@@ -263,7 +263,7 @@ export const JournalVoucherPage = () => {
               Enter debit and credit entries. Total debits must equal total credits.
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent className="space-y-6">
             {/* Error Display */}
             {error && (

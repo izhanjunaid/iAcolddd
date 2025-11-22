@@ -8,30 +8,30 @@ import type {
   TaxEntityType,
   TaxRate,
 } from '../types/tax';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
+import { Label } from './ui/Label';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from './ui/card';
+} from './ui/Card';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from './ui/dialog';
+} from './ui/Dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './ui/select';
+} from './ui/Select';
 import {
   Table,
   TableBody,
@@ -39,9 +39,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from './ui/table';
-import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
+} from './ui/Table';
+import { Textarea } from './ui/Textarea';
+import { Badge } from './ui/Badge';
 
 interface TaxExemptionsManagerProps {
   entityType: TaxEntityType;

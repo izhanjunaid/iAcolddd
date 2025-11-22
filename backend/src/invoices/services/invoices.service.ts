@@ -8,6 +8,7 @@ import { QueryInvoicesDto } from '../dto/query-invoices.dto';
 import { UpdateInvoiceDto } from '../dto/update-invoice.dto';
 import { StorageBillingService } from '../../billing/services/storage-billing.service';
 import { CustomersService } from '../../customers/customers.service';
+import { InvoiceGLService } from './invoice-gl.service';
 
 @Injectable()
 export class InvoicesService {
@@ -20,7 +21,8 @@ export class InvoicesService {
     private readonly lineItemRepository: Repository<InvoiceLineItem>,
     private readonly billingService: StorageBillingService,
     private readonly customersService: CustomersService,
-  ) {}
+    private readonly invoiceGLService: InvoiceGLService,
+  ) { }
 
   /**
    * Generate next invoice number
@@ -380,7 +382,18 @@ export class InvoicesService {
    * Mark invoice as sent
    */
   async markAsSent(id: string, updatedBy?: string): Promise<Invoice> {
-    return this.update(id, { status: InvoiceStatus.SENT }, updatedBy);
+    const invoice = await this.update(id, { status: InvoiceStatus.SENT }, updatedBy);
+
+    // Create GL Voucher
+    try {
+      await this.invoiceGLService.createInvoiceVoucher(id, updatedBy || 'system');
+    } catch (error) {
+      this.logger.error(`Failed to create GL voucher for invoice ${id}: ${error.message}`);
+      // We don't throw here to avoid rolling back the "Sent" status, but we should alert or handle it.
+      // Ideally, this should be transactional.
+    }
+
+    return invoice;
   }
 
   /**

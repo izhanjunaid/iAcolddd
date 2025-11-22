@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "@henkey/postgres-mcp-server",
+        "--connection-string",
+        "postgresql://admin:admin123@localhost:5432/advance_erp"
+      ]
+    }
+  }
+}

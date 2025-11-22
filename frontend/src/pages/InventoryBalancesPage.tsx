@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Package, MapPin, TrendingUp, AlertTriangle, Calendar } from 'lucide-react';
 import { inventoryService } from '../services/inventory';
-import { 
-  InventoryBalance, 
-  QueryInventoryBalancesDto,
-  InventoryItem,
-  Warehouse 
+import {
+  type InventoryBalance,
+  type QueryInventoryBalancesDto,
+  type InventoryItem,
+  type Warehouse
 } from '../types/inventory';
 
 const InventoryBalancesPage: React.FC = () => {
@@ -17,7 +17,7 @@ const InventoryBalancesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWarehouse, setSelectedWarehouse] = useState('');
   const [onlyWithStock, setOnlyWithStock] = useState(true);
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -59,10 +59,10 @@ const InventoryBalancesPage: React.FC = () => {
 
       // Filter by search term on frontend for now
       const response = await inventoryService.balances.getBalances(queryParams);
-      
+
       let filteredBalances = response.data;
       if (searchTerm) {
-        filteredBalances = response.data.filter(balance => 
+        filteredBalances = response.data.filter(balance =>
           balance.item?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           balance.item?.sku.toLowerCase().includes(searchTerm.toLowerCase())
         );
@@ -128,7 +128,7 @@ const InventoryBalancesPage: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Value</p>
-              <p className="text-2xl font-bold text-gray-900">${totalValue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}</p>
+              <p className="text-2xl font-bold text-gray-900">${totalValue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
             </div>
           </div>
         </div>
@@ -227,7 +227,7 @@ const InventoryBalancesPage: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      
+
                       <td className="px-4 py-3">
                         <div className="flex items-center text-sm">
                           <MapPin size={14} className="text-gray-400 mr-1" />
@@ -239,7 +239,7 @@ const InventoryBalancesPage: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      
+
                       <td className="px-4 py-3">
                         <div className="text-sm font-medium">
                           {balance.quantityOnHand.toLocaleString()}
@@ -248,7 +248,7 @@ const InventoryBalancesPage: React.FC = () => {
                           {balance.item?.unitOfMeasure}
                         </div>
                       </td>
-                      
+
                       <td className="px-4 py-3">
                         <div className="text-sm">
                           {balance.quantityReserved > 0 ? (
@@ -260,28 +260,27 @@ const InventoryBalancesPage: React.FC = () => {
                           )}
                         </div>
                       </td>
-                      
+
                       <td className="px-4 py-3">
-                        <div className={`text-sm font-medium ${
-                          balance.quantityAvailable <= 0 ? 'text-red-600' :
-                          balance.quantityAvailable < 10 ? 'text-yellow-600' : 'text-green-600'
-                        }`}>
+                        <div className={`text-sm font-medium ${balance.quantityAvailable <= 0 ? 'text-red-600' :
+                            balance.quantityAvailable < 10 ? 'text-yellow-600' : 'text-green-600'
+                          }`}>
                           {balance.quantityAvailable.toLocaleString()}
                         </div>
                       </td>
-                      
+
                       <td className="px-4 py-3">
                         <div className="text-sm font-medium">
                           ${balance.weightedAverageCost.toFixed(2)}
                         </div>
                       </td>
-                      
+
                       <td className="px-4 py-3">
                         <div className="text-sm font-medium">
-                          ${balance.totalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                          ${balance.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                       </td>
-                      
+
                       <td className="px-4 py-3">
                         {balance.lastMovementDate ? (
                           <div className="text-sm">
@@ -307,7 +306,7 @@ const InventoryBalancesPage: React.FC = () => {
                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">No inventory balances found</p>
                 <p className="text-sm text-gray-400 mt-1">
-                  {onlyWithStock 
+                  {onlyWithStock
                     ? "Try unchecking 'Only items with stock' to see all items"
                     : "Process some inventory transactions to see balances here"
                   }

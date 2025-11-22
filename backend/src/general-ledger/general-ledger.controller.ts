@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { GeneralLedgerService } from './general-ledger.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -10,7 +10,7 @@ import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @ApiBearerAuth()
 export class GeneralLedgerController {
-  constructor(private readonly glService: GeneralLedgerService) {}
+  constructor(private readonly glService: GeneralLedgerService) { }
 
   @Get('account-balance/:accountCode')
   @RequirePermissions('vouchers.read')
@@ -59,6 +59,16 @@ export class GeneralLedgerController {
   async getCategorySummary(@Query('asOfDate') asOfDate?: string) {
     const date = asOfDate ? new Date(asOfDate) : undefined;
     return this.glService.getCategorySummary(date);
+  }
+  @Post('generate-snapshots')
+  @RequirePermissions('vouchers.create')
+  @ApiOperation({ summary: 'Generate monthly balance snapshots for optimization' })
+  @ApiQuery({ name: 'upToDate', required: false, type: String, description: 'Up to date (YYYY-MM-DD)' })
+  @ApiResponse({ status: 201, description: 'Snapshots generated successfully' })
+  async generateSnapshots(@Query('upToDate') upToDate?: string) {
+    const date = upToDate ? new Date(upToDate) : undefined;
+    await this.glService.generateMonthlyBalances(date);
+    return { message: 'Monthly balance snapshots generated successfully' };
   }
 }
 

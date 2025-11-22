@@ -3,16 +3,16 @@ import { useForm } from 'react-hook-form';
 import { Pencil, Trash2, Plus, Search, Building2 } from 'lucide-react';
 import { customersService } from '../services/customers';
 import type { Customer, CreateCustomerDto } from '../types/customer';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Label } from '../components/ui/Label';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '../components/ui/dialog';
+} from '../components/ui/Dialog';
 import {
   Table,
   TableBody,
@@ -20,8 +20,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../components/ui/table';
-import { Checkbox } from '../components/ui/checkbox';
+} from '../components/ui/Table';
+import { Checkbox } from '../components/ui/Checkbox';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -219,11 +219,10 @@ export default function CustomersPage() {
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        customer.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${customer.isActive
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                        }`}
                     >
                       {customer.isActive ? 'Active' : 'Inactive'}
                     </span>
