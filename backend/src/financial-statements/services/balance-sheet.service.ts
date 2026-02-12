@@ -22,7 +22,7 @@ export class BalanceSheetService {
     private readonly accountRepository: Repository<Account>,
     @InjectRepository(VoucherDetail)
     private readonly voucherDetailRepository: Repository<VoucherDetail>,
-  ) {}
+  ) { }
 
   /**
    * Generate Balance Sheet (Statement of Financial Position)
@@ -39,25 +39,14 @@ export class BalanceSheetService {
       dto.includeZeroBalances || false,
     );
 
-    // Build current period data
-    const currentAssets = await this.buildCurrentAssetsSection(accounts, dto);
-    const nonCurrentAssets = await this.buildNonCurrentAssetsSection(accounts, dto);
-    const currentLiabilities = await this.buildCurrentLiabilitiesSection(accounts, dto);
-    const nonCurrentLiabilities = await this.buildNonCurrentLiabilitiesSection(accounts, dto);
-    const equity = await this.buildEquitySection(accounts, dto);
-
-    // Calculate totals
-    const totalAssets = currentAssets.subtotal + nonCurrentAssets.subtotal;
-    const totalLiabilities = currentLiabilities.subtotal + nonCurrentLiabilities.subtotal;
-    const totalEquity = equity.shareCapital.subtotal + equity.reserves.subtotal + equity.retainedEarnings + equity.currentYearProfit;
-
     // Build previous period data if requested
+    let previousAccounts = new Map();
     let previousTotalAssets: number | undefined;
     let previousTotalLiabilities: number | undefined;
     let previousTotalEquity: number | undefined;
 
     if (dto.includeComparison && dto.previousPeriodEnd) {
-      const previousAccounts = await this.getAllAccountsWithBalances(
+      previousAccounts = await this.getAllAccountsWithBalances(
         dto.previousPeriodEnd,
         dto.postedOnly !== false,
         false,
@@ -68,24 +57,37 @@ export class BalanceSheetService {
       previousTotalEquity = this.calculateTotalEquity(previousAccounts);
     }
 
+    // Build current period data (with comparison)
+    const currentAssets = await this.buildCurrentAssetsSection(accounts, dto, previousAccounts);
+    const nonCurrentAssets = await this.buildNonCurrentAssetsSection(accounts, dto, previousAccounts);
+    const currentLiabilities = await this.buildCurrentLiabilitiesSection(accounts, dto, previousAccounts);
+    const nonCurrentLiabilities = await this.buildNonCurrentLiabilitiesSection(accounts, dto, previousAccounts);
+    const equity = await this.buildEquitySection(accounts, dto, previousAccounts);
+
+    // Calculate totals
+    const totalAssets = currentAssets.subtotal + nonCurrentAssets.subtotal;
+    const totalLiabilities = currentLiabilities.subtotal + nonCurrentLiabilities.subtotal;
+    const totalEquity = equity.shareCapital.subtotal + equity.reserves.subtotal + equity.retainedEarnings + equity.currentYearProfit;
+
     // Calculate financial metrics
     const metrics = dto.includeMetrics !== false
       ? this.calculateFinancialMetrics({
-          totalAssets,
-          totalLiabilities,
-          totalEquity,
-          currentAssets: currentAssets.subtotal,
-          currentLiabilities: currentLiabilities.subtotal,
-          inventory: this.getInventoryValue(accounts),
-        })
+        totalAssets,
+        totalLiabilities,
+        totalEquity,
+        currentAssets: currentAssets.subtotal,
+        currentLiabilities: currentLiabilities.subtotal,
+        inventory: this.getInventoryValue(accounts),
+        netIncome: equity.currentYearProfit,
+      })
       : {
-          workingCapital: 0,
-          currentRatio: 0,
-          quickRatio: 0,
-          debtToEquityRatio: 0,
-          returnOnAssets: 0,
-          returnOnEquity: 0,
-        };
+        workingCapital: 0,
+        currentRatio: 0,
+        quickRatio: 0,
+        debtToEquityRatio: 0,
+        returnOnAssets: 0,
+        returnOnEquity: 0,
+      };
 
     // Check if balanced
     const balanceDifference = Math.abs(totalAssets - (totalLiabilities + totalEquity));
@@ -120,7 +122,9 @@ export class BalanceSheetService {
         shareCapital: equity.shareCapital,
         reserves: equity.reserves,
         retainedEarnings: equity.retainedEarnings,
+        previousRetainedEarnings: equity.previousRetainedEarnings,
         currentYearProfit: equity.currentYearProfit,
+        previousCurrentYearProfit: equity.previousCurrentYearProfit,
         totalEquity,
         previousTotalEquity,
       },
@@ -213,6 +217,7 @@ export class BalanceSheetService {
   private async buildCurrentAssetsSection(
     accounts: Map<string, any>,
     dto: BalanceSheetRequestDto,
+    previousAccounts?: Map<string, any>,
   ): Promise<StatementSection> {
     const lineItems: StatementLineItem[] = [];
     let subtotal = 0;
@@ -231,10 +236,12 @@ export class BalanceSheetService {
 
     if (cashAccounts.length > 0) {
       const cashTotal = cashAccounts.reduce((sum, item) => sum + item.balance, 0);
+      const previousTotal = this.calculatePreviousTotal(cashAccounts, previousAccounts || new Map());
       lineItems.push({
         code: 'CA-CASH',
         label: 'Cash and cash equivalents',
         amount: cashTotal,
+        previousAmount: previousTotal,
         level: 1,
         isTotal: false,
         isBold: false,
@@ -246,10 +253,12 @@ export class BalanceSheetService {
 
       if (dto.detailed) {
         cashAccounts.forEach((item) => {
+          const prev = previousAccounts?.get(item.account.code);
           lineItems.push({
             code: item.account.code,
             label: item.account.name,
             amount: item.balance,
+            previousAmount: prev ? prev.balance : 0,
             level: 2,
             isTotal: false,
             isBold: false,
@@ -270,10 +279,12 @@ export class BalanceSheetService {
 
     if (arAccounts.length > 0) {
       const arTotal = arAccounts.reduce((sum, item) => sum + item.balance, 0);
+      const previousTotal = this.calculatePreviousTotal(arAccounts, previousAccounts || new Map());
       lineItems.push({
         code: 'CA-AR',
         label: 'Trade and other receivables',
         amount: arTotal,
+        previousAmount: previousTotal,
         level: 1,
         isTotal: false,
         isBold: false,
@@ -285,10 +296,12 @@ export class BalanceSheetService {
 
       if (dto.detailed) {
         arAccounts.forEach((item) => {
+          const prev = previousAccounts?.get(item.account.code);
           lineItems.push({
             code: item.account.code,
             label: item.account.name,
             amount: item.balance,
+            previousAmount: prev ? prev.balance : 0,
             level: 2,
             isTotal: false,
             isBold: false,
@@ -308,10 +321,12 @@ export class BalanceSheetService {
 
     if (inventoryAccounts.length > 0) {
       const inventoryTotal = inventoryAccounts.reduce((sum, item) => sum + item.balance, 0);
+      const previousTotal = this.calculatePreviousTotal(inventoryAccounts, previousAccounts || new Map());
       lineItems.push({
         code: 'CA-INV',
         label: 'Inventories',
         amount: inventoryTotal,
+        previousAmount: previousTotal,
         level: 1,
         isTotal: false,
         isBold: false,
@@ -323,10 +338,12 @@ export class BalanceSheetService {
 
       if (dto.detailed) {
         inventoryAccounts.forEach((item) => {
+          const prev = previousAccounts?.get(item.account.code);
           lineItems.push({
             code: item.account.code,
             label: item.account.name,
             amount: item.balance,
+            previousAmount: prev ? prev.balance : 0,
             level: 2,
             isTotal: false,
             isBold: false,
@@ -347,10 +364,12 @@ export class BalanceSheetService {
 
     if (prepaymentAccounts.length > 0) {
       const prepaymentTotal = prepaymentAccounts.reduce((sum, item) => sum + item.balance, 0);
+      const previousTotal = this.calculatePreviousTotal(prepaymentAccounts, previousAccounts || new Map());
       lineItems.push({
         code: 'CA-PREPAY',
         label: 'Prepayments and advances',
         amount: prepaymentTotal,
+        previousAmount: previousTotal,
         level: 1,
         isTotal: false,
         isBold: false,
@@ -372,10 +391,12 @@ export class BalanceSheetService {
 
     if (otherCurrentAssets.length > 0) {
       const otherTotal = otherCurrentAssets.reduce((sum, item) => sum + item.balance, 0);
+      const previousTotal = this.calculatePreviousTotal(otherCurrentAssets, previousAccounts || new Map());
       lineItems.push({
         code: 'CA-OTHER',
         label: 'Other current assets',
         amount: otherTotal,
+        previousAmount: previousTotal,
         level: 1,
         isTotal: false,
         isBold: false,
@@ -387,10 +408,12 @@ export class BalanceSheetService {
 
       if (dto.detailed) {
         otherCurrentAssets.forEach((item) => {
+          const prev = previousAccounts?.get(item.account.code);
           lineItems.push({
             code: item.account.code,
             label: item.account.name,
             amount: item.balance,
+            previousAmount: prev ? prev.balance : 0,
             level: 2,
             isTotal: false,
             isBold: false,
@@ -416,6 +439,7 @@ export class BalanceSheetService {
   private async buildNonCurrentAssetsSection(
     accounts: Map<string, any>,
     dto: BalanceSheetRequestDto,
+    previousAccounts?: Map<string, any>,
   ): Promise<StatementSection> {
     const lineItems: StatementLineItem[] = [];
     let subtotal = 0;
@@ -430,10 +454,12 @@ export class BalanceSheetService {
 
     if (fixedAssets.length > 0) {
       const fixedTotal = fixedAssets.reduce((sum, item) => sum + item.balance, 0);
+      const previousTotal = this.calculatePreviousTotal(fixedAssets, previousAccounts || new Map());
       lineItems.push({
         code: 'NCA-PPE',
         label: 'Property, plant and equipment',
         amount: fixedTotal,
+        previousAmount: previousTotal,
         level: 1,
         isTotal: false,
         isBold: false,
@@ -445,10 +471,12 @@ export class BalanceSheetService {
 
       if (dto.detailed) {
         fixedAssets.forEach((item) => {
+          const prev = previousAccounts?.get(item.account.code);
           lineItems.push({
             code: item.account.code,
             label: item.account.name,
             amount: item.balance,
+            previousAmount: prev ? prev.balance : 0,
             level: 2,
             isTotal: false,
             isBold: false,
@@ -468,10 +496,12 @@ export class BalanceSheetService {
 
     if (intangibleAssets.length > 0) {
       const intangibleTotal = intangibleAssets.reduce((sum, item) => sum + item.balance, 0);
+      const previousTotal = this.calculatePreviousTotal(intangibleAssets, previousAccounts || new Map());
       lineItems.push({
         code: 'NCA-INTANGIBLE',
         label: 'Intangible assets',
         amount: intangibleTotal,
+        previousAmount: previousTotal,
         level: 1,
         isTotal: false,
         isBold: false,
@@ -483,10 +513,12 @@ export class BalanceSheetService {
 
       if (dto.detailed) {
         intangibleAssets.forEach((item) => {
+          const prev = previousAccounts?.get(item.account.code);
           lineItems.push({
             code: item.account.code,
             label: item.account.name,
             amount: item.balance,
+            previousAmount: prev ? prev.balance : 0,
             level: 2,
             isTotal: false,
             isBold: false,
@@ -508,10 +540,12 @@ export class BalanceSheetService {
 
     if (investmentAccounts.length > 0) {
       const investmentTotal = investmentAccounts.reduce((sum, item) => sum + item.balance, 0);
+      const previousTotal = this.calculatePreviousTotal(investmentAccounts, previousAccounts || new Map());
       lineItems.push({
         code: 'NCA-INV',
         label: 'Long-term investments',
         amount: investmentTotal,
+        previousAmount: previousTotal,
         level: 1,
         isTotal: false,
         isBold: false,
@@ -531,10 +565,12 @@ export class BalanceSheetService {
 
     if (deferredTaxAssets.length > 0) {
       const deferredTaxTotal = deferredTaxAssets.reduce((sum, item) => sum + item.balance, 0);
+      const previousTotal = this.calculatePreviousTotal(deferredTaxAssets, previousAccounts || new Map());
       lineItems.push({
         code: 'NCA-DTA',
         label: 'Deferred tax assets',
         amount: deferredTaxTotal,
+        previousAmount: previousTotal,
         level: 1,
         isTotal: false,
         isBold: false,
@@ -560,6 +596,7 @@ export class BalanceSheetService {
   private async buildCurrentLiabilitiesSection(
     accounts: Map<string, any>,
     dto: BalanceSheetRequestDto,
+    previousAccounts?: Map<string, any>,
   ): Promise<StatementSection> {
     const lineItems: StatementLineItem[] = [];
     let subtotal = 0;
@@ -580,10 +617,12 @@ export class BalanceSheetService {
 
     if (apAccounts.length > 0) {
       const apTotal = apAccounts.reduce((sum, item) => sum + item.balance, 0);
+      const previousTotal = this.calculatePreviousTotal(apAccounts, previousAccounts || new Map());
       lineItems.push({
         code: 'CL-AP',
         label: 'Trade and other payables',
         amount: apTotal,
+        previousAmount: previousTotal,
         level: 1,
         isTotal: false,
         isBold: false,
@@ -595,10 +634,12 @@ export class BalanceSheetService {
 
       if (dto.detailed) {
         apAccounts.forEach((item) => {
+          const prev = previousAccounts?.get(item.account.code);
           lineItems.push({
             code: item.account.code,
             label: item.account.name,
             amount: item.balance,
+            previousAmount: prev ? prev.balance : 0,
             level: 2,
             isTotal: false,
             isBold: false,
@@ -619,10 +660,12 @@ export class BalanceSheetService {
 
     if (shortTermDebt.length > 0) {
       const debtTotal = shortTermDebt.reduce((sum, item) => sum + item.balance, 0);
+      const previousTotal = this.calculatePreviousTotal(shortTermDebt, previousAccounts || new Map());
       lineItems.push({
         code: 'CL-DEBT',
         label: 'Short-term borrowings',
         amount: debtTotal,
+        previousAmount: previousTotal,
         level: 1,
         isTotal: false,
         isBold: false,
@@ -643,10 +686,12 @@ export class BalanceSheetService {
 
     if (taxLiabilities.length > 0) {
       const taxTotal = taxLiabilities.reduce((sum, item) => sum + item.balance, 0);
+      const previousTotal = this.calculatePreviousTotal(taxLiabilities, previousAccounts || new Map());
       lineItems.push({
         code: 'CL-TAX',
         label: 'Current tax liabilities',
         amount: taxTotal,
+        previousAmount: previousTotal,
         level: 1,
         isTotal: false,
         isBold: false,
@@ -666,10 +711,12 @@ export class BalanceSheetService {
 
     if (accruals.length > 0) {
       const accrualTotal = accruals.reduce((sum, item) => sum + item.balance, 0);
+      const previousTotal = this.calculatePreviousTotal(accruals, previousAccounts || new Map());
       lineItems.push({
         code: 'CL-ACCRUAL',
         label: 'Accruals and provisions',
         amount: accrualTotal,
+        previousAmount: previousTotal,
         level: 1,
         isTotal: false,
         isBold: false,
@@ -691,10 +738,12 @@ export class BalanceSheetService {
 
     if (otherCurrentLiabilities.length > 0) {
       const otherTotal = otherCurrentLiabilities.reduce((sum, item) => sum + item.balance, 0);
+      const previousTotal = this.calculatePreviousTotal(otherCurrentLiabilities, previousAccounts || new Map());
       lineItems.push({
         code: 'CL-OTHER',
         label: 'Other current liabilities',
         amount: otherTotal,
+        previousAmount: previousTotal,
         level: 1,
         isTotal: false,
         isBold: false,
@@ -706,10 +755,12 @@ export class BalanceSheetService {
 
       if (dto.detailed) {
         otherCurrentLiabilities.forEach((item) => {
+          const prev = previousAccounts?.get(item.account.code);
           lineItems.push({
             code: item.account.code,
             label: item.account.name,
             amount: item.balance,
+            previousAmount: prev ? prev.balance : 0,
             level: 2,
             isTotal: false,
             isBold: false,
@@ -883,11 +934,14 @@ export class BalanceSheetService {
   private async buildEquitySection(
     accounts: Map<string, any>,
     dto: BalanceSheetRequestDto,
+    previousAccounts?: Map<string, any>,
   ): Promise<{
     shareCapital: StatementSection;
     reserves: StatementSection;
     retainedEarnings: number;
+    previousRetainedEarnings?: number;
     currentYearProfit: number;
+    previousCurrentYearProfit?: number;
   }> {
     const equityAccounts = Array.from(accounts.values()).filter(
       (item) => item.account.category === AccountCategory.EQUITY,
@@ -903,10 +957,12 @@ export class BalanceSheetService {
 
     if (shareCapitalAccounts.length > 0) {
       shareCapitalAccounts.forEach((item) => {
+        const prev = previousAccounts?.get(item.account.code);
         shareCapitalItems.push({
           code: item.account.code,
           label: item.account.name,
           amount: item.balance,
+          previousAmount: prev ? prev.balance : 0,
           level: 1,
           isTotal: false,
           isBold: false,
@@ -927,10 +983,12 @@ export class BalanceSheetService {
 
     if (reservesAccounts.length > 0) {
       reservesAccounts.forEach((item) => {
+        const prev = previousAccounts?.get(item.account.code);
         reservesItems.push({
           code: item.account.code,
           label: item.account.name,
           amount: item.balance,
+          previousAmount: prev ? prev.balance : 0,
           level: 1,
           isTotal: false,
           isBold: false,
@@ -951,8 +1009,19 @@ export class BalanceSheetService {
       0,
     );
 
+    const previousRetainedEarnings = this.calculatePreviousTotal(retainedEarningsAccounts, previousAccounts || new Map());
+
     // Current year profit (from revenue - expenses)
     const currentYearProfit = await this.calculateCurrentYearProfit(dto.periodStart, dto.periodEnd);
+
+    // Calculate previous current year profit
+    let previousCurrentYearProfit: number | undefined;
+    if (dto.includeComparison && dto.previousPeriodEnd) {
+      // Assume same duration
+      const duration = new Date(dto.periodEnd).getTime() - new Date(dto.periodStart).getTime();
+      const prevStart = new Date(new Date(dto.previousPeriodEnd).getTime() - duration);
+      previousCurrentYearProfit = await this.calculateCurrentYearProfit(prevStart, dto.previousPeriodEnd);
+    }
 
     return {
       shareCapital: {
@@ -970,7 +1039,9 @@ export class BalanceSheetService {
         order: 2,
       },
       retainedEarnings,
+      previousRetainedEarnings,
       currentYearProfit,
+      previousCurrentYearProfit,
     };
   }
 
@@ -1021,6 +1092,7 @@ export class BalanceSheetService {
     currentAssets: number;
     currentLiabilities: number;
     inventory: number;
+    netIncome: number;
   }): BalanceSheet['metrics'] {
     const {
       totalAssets,
@@ -1029,6 +1101,7 @@ export class BalanceSheetService {
       currentAssets,
       currentLiabilities,
       inventory,
+      netIncome,
     } = data;
 
     // Working Capital = Current Assets - Current Liabilities
@@ -1045,11 +1118,11 @@ export class BalanceSheetService {
     // Debt-to-Equity Ratio = Total Liabilities / Total Equity
     const debtToEquityRatio = totalEquity > 0 ? totalLiabilities / totalEquity : 0;
 
-    // Return on Assets = Net Income / Total Assets (placeholder - will be calculated with P&L)
-    const returnOnAssets = 0; // Will be calculated when we have net income
+    // Return on Assets = Net Income / Total Assets
+    const returnOnAssets = totalAssets > 0 ? (netIncome / totalAssets) * 100 : 0;
 
-    // Return on Equity = Net Income / Total Equity (placeholder)
-    const returnOnEquity = 0; // Will be calculated when we have net income
+    // Return on Equity = Net Income / Total Equity
+    const returnOnEquity = totalEquity > 0 ? (netIncome / totalEquity) * 100 : 0;
 
     return {
       workingCapital: Math.round(workingCapital * 100) / 100,
@@ -1095,5 +1168,19 @@ export class BalanceSheetService {
     return Array.from(accounts.values())
       .filter((item) => item.account.name.toLowerCase().includes('inventory'))
       .reduce((sum, item) => sum + item.balance, 0);
+  }
+  /**
+   * Helper: Calculate total from previous accounts
+   */
+  private calculatePreviousTotal(
+    currentAccounts: any[],
+    previousAccounts: Map<string, any>,
+  ): number | undefined {
+    if (!previousAccounts || previousAccounts.size === 0) return undefined;
+
+    return currentAccounts.reduce((sum, item) => {
+      const prev = previousAccounts.get(item.account.code);
+      return sum + (prev ? prev.balance : 0);
+    }, 0);
   }
 }

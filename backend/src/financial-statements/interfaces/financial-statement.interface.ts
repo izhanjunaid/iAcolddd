@@ -115,7 +115,9 @@ export interface BalanceSheet extends BaseFinancialStatement {
     shareCapital: StatementSection;
     reserves: StatementSection;
     retainedEarnings: number;
+    previousRetainedEarnings?: number;
     currentYearProfit: number;
+    previousCurrentYearProfit?: number;
     totalEquity: number;
     previousTotalEquity?: number;
   };
