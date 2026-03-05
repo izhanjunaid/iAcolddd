@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsUUID, IsBoolean, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsUUID,
+  IsBoolean,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateCostCenterDto {
   @ApiProperty({
@@ -44,4 +50,3 @@ export class CreateCostCenterDto {
   @IsBoolean()
   isActive?: boolean;
 }
-

@@ -38,4 +38,3 @@ export class RefreshToken {
     return !this.isRevoked && this.expiresAt > new Date();
   }
 }
-

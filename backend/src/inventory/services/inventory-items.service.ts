@@ -1,11 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere, Like, ILike } from 'typeorm';
 import { InventoryItem } from '../entities/inventory-item.entity';
-import { 
-  CreateInventoryItemDto, 
-  UpdateInventoryItemDto, 
-  QueryInventoryItemsDto 
+import {
+  CreateInventoryItemDto,
+  UpdateInventoryItemDto,
+  QueryInventoryItemsDto,
 } from '../dto';
 import { InventoryItemNotFoundException } from '../../common/exceptions/inventory.exception';
 
@@ -16,21 +20,30 @@ export class InventoryItemsService {
     private readonly inventoryItemRepository: Repository<InventoryItem>,
   ) {}
 
-  async create(createDto: CreateInventoryItemDto, userId: string): Promise<InventoryItem> {
+  async create(
+    createDto: CreateInventoryItemDto,
+    userId: string,
+  ): Promise<InventoryItem> {
     // Check if SKU already exists
     const existingItem = await this.inventoryItemRepository.findOne({
       where: { sku: createDto.sku },
     });
 
     if (existingItem) {
-      throw new BadRequestException(`Item with SKU '${createDto.sku}' already exists`);
+      throw new BadRequestException(
+        `Item with SKU '${createDto.sku}' already exists`,
+      );
     }
 
     // Validate temperature range if both min and max are provided
-    if (createDto.minTemperature !== undefined && 
-        createDto.maxTemperature !== undefined && 
-        createDto.minTemperature > createDto.maxTemperature) {
-      throw new BadRequestException('Minimum temperature cannot be greater than maximum temperature');
+    if (
+      createDto.minTemperature !== undefined &&
+      createDto.maxTemperature !== undefined &&
+      createDto.minTemperature > createDto.maxTemperature
+    ) {
+      throw new BadRequestException(
+        'Minimum temperature cannot be greater than maximum temperature',
+      );
     }
 
     const inventoryItem = this.inventoryItemRepository.create({
@@ -60,7 +73,8 @@ export class InventoryItemsService {
       sortOrder = 'ASC',
     } = queryDto;
 
-    const queryBuilder = this.inventoryItemRepository.createQueryBuilder('item')
+    const queryBuilder = this.inventoryItemRepository
+      .createQueryBuilder('item')
       .leftJoinAndSelect('item.createdByUser', 'createdByUser')
       .leftJoinAndSelect('item.updatedByUser', 'updatedByUser');
 
@@ -74,15 +88,21 @@ export class InventoryItemsService {
     }
 
     if (category) {
-      queryBuilder.andWhere('item.category ILIKE :category', { category: `%${category}%` });
+      queryBuilder.andWhere('item.category ILIKE :category', {
+        category: `%${category}%`,
+      });
     }
 
     if (unitOfMeasure) {
-      queryBuilder.andWhere('item.unitOfMeasure = :unitOfMeasure', { unitOfMeasure });
+      queryBuilder.andWhere('item.unitOfMeasure = :unitOfMeasure', {
+        unitOfMeasure,
+      });
     }
 
     if (isPerishable !== undefined) {
-      queryBuilder.andWhere('item.isPerishable = :isPerishable', { isPerishable });
+      queryBuilder.andWhere('item.isPerishable = :isPerishable', {
+        isPerishable,
+      });
     }
 
     if (isActive !== undefined) {
@@ -91,10 +111,16 @@ export class InventoryItemsService {
 
     // Apply sorting
     const allowedSortFields = [
-      'sku', 'name', 'category', 'unitOfMeasure', 'standardCost', 
-      'lastCost', 'createdAt', 'updatedAt'
+      'sku',
+      'name',
+      'category',
+      'unitOfMeasure',
+      'standardCost',
+      'lastCost',
+      'createdAt',
+      'updatedAt',
     ];
-    
+
     if (allowedSortFields.includes(sortBy)) {
       queryBuilder.orderBy(`item.${sortBy}`, sortOrder);
     } else {
@@ -140,15 +166,21 @@ export class InventoryItemsService {
     return inventoryItem;
   }
 
-  async update(id: string, updateDto: UpdateInventoryItemDto, userId: string): Promise<InventoryItem> {
+  async update(
+    id: string,
+    updateDto: UpdateInventoryItemDto,
+    userId: string,
+  ): Promise<InventoryItem> {
     const inventoryItem = await this.findOne(id);
 
     // Validate temperature range if both min and max are provided
     const minTemp = updateDto.minTemperature ?? inventoryItem.minTemperature;
     const maxTemp = updateDto.maxTemperature ?? inventoryItem.maxTemperature;
-    
+
     if (minTemp !== null && maxTemp !== null && minTemp > maxTemp) {
-      throw new BadRequestException('Minimum temperature cannot be greater than maximum temperature');
+      throw new BadRequestException(
+        'Minimum temperature cannot be greater than maximum temperature',
+      );
     }
 
     // Update the item
@@ -164,7 +196,7 @@ export class InventoryItemsService {
 
     // Check if item has any transactions (we might want to prevent deletion)
     // This will be implemented when we have the transactions service
-    
+
     // For now, we'll do a soft delete by setting isActive to false
     inventoryItem.isActive = false;
     await this.inventoryItemRepository.save(inventoryItem);
@@ -179,7 +211,7 @@ export class InventoryItemsService {
       .orderBy('item.category', 'ASC')
       .getRawMany();
 
-    return result.map(row => row.category);
+    return result.map((row) => row.category);
   }
 
   async getStats(): Promise<{
@@ -188,19 +220,20 @@ export class InventoryItemsService {
     perishableItems: number;
     categories: number;
   }> {
-    const [totalItems, activeItems, perishableItems, categoriesResult] = await Promise.all([
-      this.inventoryItemRepository.count(),
-      this.inventoryItemRepository.count({ where: { isActive: true } }),
-      this.inventoryItemRepository.count({ 
-        where: { isActive: true, isPerishable: true } 
-      }),
-      this.inventoryItemRepository
-        .createQueryBuilder('item')
-        .select('COUNT(DISTINCT item.category)', 'count')
-        .where('item.category IS NOT NULL')
-        .andWhere('item.isActive = :isActive', { isActive: true })
-        .getRawOne(),
-    ]);
+    const [totalItems, activeItems, perishableItems, categoriesResult] =
+      await Promise.all([
+        this.inventoryItemRepository.count(),
+        this.inventoryItemRepository.count({ where: { isActive: true } }),
+        this.inventoryItemRepository.count({
+          where: { isActive: true, isPerishable: true },
+        }),
+        this.inventoryItemRepository
+          .createQueryBuilder('item')
+          .select('COUNT(DISTINCT item.category)', 'count')
+          .where('item.category IS NOT NULL')
+          .andWhere('item.isActive = :isActive', { isActive: true })
+          .getRawOne(),
+      ]);
 
     return {
       totalItems,
@@ -210,8 +243,12 @@ export class InventoryItemsService {
     };
   }
 
-  async bulkUpdateStandardCost(updates: Array<{ id: string; standardCost: number }>, userId: string): Promise<void> {
-    const queryRunner = this.inventoryItemRepository.manager.connection.createQueryRunner();
+  async bulkUpdateStandardCost(
+    updates: Array<{ id: string; standardCost: number }>,
+    userId: string,
+  ): Promise<void> {
+    const queryRunner =
+      this.inventoryItemRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
@@ -233,4 +270,3 @@ export class InventoryItemsService {
     }
   }
 }
-

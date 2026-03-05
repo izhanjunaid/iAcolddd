@@ -52,7 +52,12 @@ export class TaxRate {
   isDefault: boolean;
 
   // FBR Account for tax liability
-  @Column({ type: 'varchar', length: 20, nullable: true, name: 'liability_account_code' })
+  @Column({
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+    name: 'liability_account_code',
+  })
   liabilityAccountCode: string;
 
   // Metadata for additional configuration

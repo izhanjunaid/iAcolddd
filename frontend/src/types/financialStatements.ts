@@ -57,6 +57,8 @@ export interface BalanceSheet extends BaseFinancialStatement {
     currentYearProfit: number;
     totalEquity: number;
     previousTotalEquity?: number;
+    previousCurrentYearProfit?: number;
+    previousRetainedEarnings?: number;
   };
   metrics: {
     workingCapital: number;

@@ -102,11 +102,7 @@ export class CostCentersController {
     @Body() updateDto: UpdateCostCenterDto,
     @Req() req: any,
   ) {
-    return await this.costCentersService.update(
-      id,
-      updateDto,
-      req.user.id,
-    );
+    return await this.costCentersService.update(id, updateDto, req.user.id);
   }
 
   @Delete(':id')
@@ -123,4 +119,3 @@ export class CostCentersController {
     return { message: 'Cost center deleted successfully' };
   }
 }
-

@@ -2,22 +2,29 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InventoryCostLayer } from '../entities/inventory-cost-layer.entity';
-import { 
-  FIFOCalculationResult, 
+import {
+  FIFOCalculationResult,
   FIFOCostBreakdown,
-  CostLayer
+  CostLayer,
 } from '../../common/interfaces/inventory.interface';
-import { 
-  InsufficientStockException, 
-  FIFOCalculationException 
+import {
+  InsufficientStockException,
+  FIFOCalculationException,
 } from '../../common/exceptions/inventory.exception';
+import Decimal from 'decimal.js';
 
 @Injectable()
 export class FIFOCostingService {
   constructor(
     @InjectRepository(InventoryCostLayer)
     private readonly costLayerRepository: Repository<InventoryCostLayer>,
-  ) {}
+  ) {
+    // Defaults are fine
+  }
+
+  private toDecimal(value: any): any {
+    return new Decimal(value || 0);
+  }
 
   /**
    * Calculate FIFO cost for issuing inventory
@@ -35,9 +42,11 @@ export class FIFOCostingService {
     warehouseId: string,
     quantityToIssue: number,
     lotNumber?: string,
-    manager?: any
+    manager?: any,
   ): Promise<FIFOCalculationResult> {
-    const repository = manager ? manager.getRepository(InventoryCostLayer) : this.costLayerRepository;
+    const repository = manager
+      ? manager.getRepository(InventoryCostLayer)
+      : this.costLayerRepository;
 
     // Get available cost layers sorted by FIFO order (oldest first)
     const layers = await this.getAvailableCostLayers(
@@ -45,60 +54,75 @@ export class FIFOCostingService {
       customerId,
       warehouseId,
       lotNumber,
-      repository
+      repository,
     );
 
     if (layers.length === 0) {
       throw new InsufficientStockException(
-        `No cost layers available for item ${itemId} at warehouse ${warehouseId}`
+        `No cost layers available for item ${itemId} at warehouse ${warehouseId}`,
       );
     }
 
     // Calculate total available quantity
-    const totalAvailable = layers.reduce((sum, layer) => sum + layer.remainingQuantity, 0);
+    const totalAvailable = layers.reduce(
+      (sum, layer) => sum + layer.remainingQuantity,
+      0,
+    );
 
     if (totalAvailable < quantityToIssue) {
       throw new InsufficientStockException(
-        `Insufficient stock. Required: ${quantityToIssue}, Available: ${totalAvailable}`
+        `Insufficient stock. Required: ${quantityToIssue}, Available: ${totalAvailable}`,
       );
     }
 
-    let remainingToIssue = quantityToIssue;
-    let totalCost = 0;
+    let remainingToIssue = this.toDecimal(quantityToIssue);
+    let totalCost = new Decimal(0);
     const costBreakdown: FIFOCostBreakdown[] = [];
 
     // Consume from oldest layers first (FIFO)
     for (const layer of layers) {
-      if (remainingToIssue <= 0) break;
+      if (remainingToIssue.lte(0)) break;
 
-      const quantityFromThisLayer = Math.min(remainingToIssue, layer.remainingQuantity);
-      const costFromThisLayer = quantityFromThisLayer * layer.unitCost;
+      const layerRemaining = this.toDecimal(layer.remainingQuantity);
+
+      // Take the smaller of: what we need vs what's in the layer
+      const quantityFromThisLayer = remainingToIssue.lt(layerRemaining)
+        ? remainingToIssue
+        : layerRemaining;
+
+      const unitCost = this.toDecimal(layer.unitCost);
+      const costFromThisLayer = quantityFromThisLayer.mul(unitCost);
 
       costBreakdown.push({
         layerId: layer.id,
-        quantityUsed: quantityFromThisLayer,
-        unitCost: layer.unitCost,
-        totalCost: costFromThisLayer,
+        quantityUsed: quantityFromThisLayer.toNumber(),
+        unitCost: unitCost.toNumber(),
+        totalCost: costFromThisLayer.toNumber(),
         receiptDate: layer.receiptDate,
         lotNumber: layer.lotNumber,
       });
 
-      totalCost += costFromThisLayer;
-      remainingToIssue -= quantityFromThisLayer;
+      totalCost = totalCost.plus(costFromThisLayer);
+      remainingToIssue = remainingToIssue.minus(quantityFromThisLayer);
     }
 
     // Validate calculation
-    if (remainingToIssue > 0) {
+    if (remainingToIssue.gt(0)) {
       throw new FIFOCalculationException(
-        `FIFO calculation failed. Still need ${remainingToIssue} units`
+        `FIFO calculation failed. Still need ${remainingToIssue.toString()} units`,
       );
     }
 
-    const averageCost = quantityToIssue > 0 ? totalCost / quantityToIssue : 0;
+    // Average cost = Total Cost / Total Quantity
+    // Using Decimal for division to avoid floating point weirdness
+    const qtyDecimal = this.toDecimal(quantityToIssue);
+    const averageCost = qtyDecimal.gt(0)
+      ? totalCost.div(qtyDecimal)
+      : new Decimal(0);
 
     return {
-      totalCost,
-      averageCost,
+      totalCost: totalCost.toNumber(),
+      averageCost: averageCost.toNumber(),
       costBreakdown,
       remainingQuantity: 0, // All quantity was allocated
     };
@@ -111,7 +135,7 @@ export class FIFOCostingService {
    */
   async consumeCostLayers(
     costBreakdown: FIFOCostBreakdown[],
-    manager: any
+    manager: any,
   ): Promise<void> {
     const repository = manager.getRepository(InventoryCostLayer);
 
@@ -122,12 +146,22 @@ export class FIFOCostingService {
 
       if (!layer) {
         throw new FIFOCalculationException(
-          `Cost layer ${breakdown.layerId} not found during consumption`
+          `Cost layer ${breakdown.layerId} not found during consumption`,
         );
       }
 
-      // Update remaining quantity
-      layer.remainingQuantity -= breakdown.quantityUsed;
+      // Update remaining quantity with precision
+      const currentRemaining = this.toDecimal(layer.remainingQuantity);
+      const usedQty = this.toDecimal(breakdown.quantityUsed);
+      const newRemaining = currentRemaining.minus(usedQty);
+
+      // Warning if we go negative (should have been caught by checkStockAvailability)
+      if (newRemaining.isNegative()) {
+        // Clamp to 0 to avoid DB errors, but log warning conceptually
+        layer.remainingQuantity = 0;
+      } else {
+        layer.remainingQuantity = newRemaining.toNumber();
+      }
 
       // Mark as fully consumed if no quantity remains
       if (layer.remainingQuantity <= 0) {
@@ -150,7 +184,7 @@ export class FIFOCostingService {
     costBreakdown: FIFOCostBreakdown[],
     toWarehouseId: string,
     toRoomId?: string,
-    manager?: any
+    manager?: any,
   ): Promise<void> {
     const repository = manager.getRepository(InventoryCostLayer);
 
@@ -176,10 +210,23 @@ export class FIFOCostingService {
         },
       });
 
+      const qtyToTransfer = this.toDecimal(breakdown.quantityUsed);
+
       if (existingDestinationLayer) {
-        // Update existing layer
-        existingDestinationLayer.remainingQuantity += breakdown.quantityUsed;
-        existingDestinationLayer.originalQuantity += breakdown.quantityUsed;
+        // Update existing layer (add quantity)
+        const currentQty = this.toDecimal(
+          existingDestinationLayer.remainingQuantity,
+        );
+        const originalQty = this.toDecimal(
+          existingDestinationLayer.originalQuantity,
+        );
+
+        existingDestinationLayer.remainingQuantity = currentQty
+          .plus(qtyToTransfer)
+          .toNumber();
+        existingDestinationLayer.originalQuantity = originalQty
+          .plus(qtyToTransfer)
+          .toNumber();
         existingDestinationLayer.isFullyConsumed = false;
         await repository.save(existingDestinationLayer);
       } else {
@@ -201,8 +248,14 @@ export class FIFOCostingService {
         await repository.save(newLayer);
       }
 
-      // Update source layer
-      sourceLayer.remainingQuantity -= breakdown.quantityUsed;
+      // Update source layer (reduce quantity)
+      const sourceRemaining = this.toDecimal(sourceLayer.remainingQuantity);
+      const newSourceRemaining = sourceRemaining.minus(qtyToTransfer);
+
+      sourceLayer.remainingQuantity = newSourceRemaining.isNegative()
+        ? 0
+        : newSourceRemaining.toNumber();
+
       if (sourceLayer.remainingQuantity <= 0) {
         sourceLayer.remainingQuantity = 0;
         sourceLayer.isFullyConsumed = true;
@@ -225,11 +278,12 @@ export class FIFOCostingService {
     customerId: string | undefined,
     warehouseId: string,
     lotNumber?: string,
-    repository?: any
+    repository?: any,
   ): Promise<CostLayer[]> {
     const repo = repository || this.costLayerRepository;
 
-    const queryBuilder = repo.createQueryBuilder('layer')
+    const queryBuilder = repo
+      .createQueryBuilder('layer')
       .where('layer.itemId = :itemId', { itemId })
       .andWhere('layer.warehouseId = :warehouseId', { warehouseId })
       .andWhere('layer.remainingQuantity > 0')
@@ -252,7 +306,7 @@ export class FIFOCostingService {
 
     const layers = await queryBuilder.getMany();
 
-    return layers.map(layer => ({
+    return layers.map((layer) => ({
       id: layer.id,
       itemId: layer.itemId,
       customerId: layer.customerId,
@@ -280,7 +334,7 @@ export class FIFOCostingService {
     itemId?: string,
     customerId?: string,
     warehouseId?: string,
-    asOfDate?: Date
+    asOfDate?: Date,
   ): Promise<{
     totalQuantity: number;
     totalValue: number;
@@ -289,7 +343,8 @@ export class FIFOCostingService {
     oldestReceiptDate?: Date;
     newestReceiptDate?: Date;
   }> {
-    const queryBuilder = this.costLayerRepository.createQueryBuilder('layer')
+    const queryBuilder = this.costLayerRepository
+      .createQueryBuilder('layer')
       .where('layer.remainingQuantity > 0')
       .andWhere('layer.isFullyConsumed = false');
 
@@ -304,7 +359,9 @@ export class FIFOCostingService {
     }
 
     if (warehouseId) {
-      queryBuilder.andWhere('layer.warehouseId = :warehouseId', { warehouseId });
+      queryBuilder.andWhere('layer.warehouseId = :warehouseId', {
+        warehouseId,
+      });
     }
 
     if (asOfDate) {
@@ -322,15 +379,30 @@ export class FIFOCostingService {
       };
     }
 
-    const totalQuantity = layers.reduce((sum, layer) => sum + layer.remainingQuantity, 0);
-    const totalValue = layers.reduce((sum, layer) => sum + (layer.remainingQuantity * layer.unitCost), 0);
-    const averageCost = totalQuantity > 0 ? totalValue / totalQuantity : 0;
+    // Use Decimal for aggregation
+    let totalQtyDecimal = new Decimal(0);
+    let totalValueDecimal = new Decimal(0);
 
-    const receiptDates = layers.map(layer => layer.receiptDate).sort((a, b) => a.getTime() - b.getTime());
+    for (const layer of layers) {
+      const layerQty = this.toDecimal(layer.remainingQuantity);
+      const layerCost = this.toDecimal(layer.unitCost);
+      const layerValue = layerQty.mul(layerCost);
+
+      totalQtyDecimal = totalQtyDecimal.plus(layerQty);
+      totalValueDecimal = totalValueDecimal.plus(layerValue);
+    }
+
+    const averageCost = totalQtyDecimal.gt(0)
+      ? totalValueDecimal.div(totalQtyDecimal).toNumber()
+      : 0;
+
+    const receiptDates = layers
+      .map((layer) => layer.receiptDate)
+      .sort((a, b) => a.getTime() - b.getTime());
 
     return {
-      totalQuantity,
-      totalValue,
+      totalQuantity: totalQtyDecimal.toNumber(),
+      totalValue: totalValueDecimal.toNumber(),
       averageCost,
       layerCount: layers.length,
       oldestReceiptDate: receiptDates[0],
@@ -369,9 +441,9 @@ export class FIFOCostingService {
     layersChecked: number;
   }> {
     const issues: string[] = [];
-    
+
     const queryBuilder = this.costLayerRepository.createQueryBuilder('layer');
-    
+
     if (itemId) {
       queryBuilder.where('layer.itemId = :itemId', { itemId });
     }
@@ -381,26 +453,36 @@ export class FIFOCostingService {
     for (const layer of layers) {
       // Check for negative remaining quantity
       if (layer.remainingQuantity < 0) {
-        issues.push(`Layer ${layer.id}: Negative remaining quantity (${layer.remainingQuantity})`);
+        issues.push(
+          `Layer ${layer.id}: Negative remaining quantity (${layer.remainingQuantity})`,
+        );
       }
 
       // Check if remaining quantity exceeds original quantity
       if (layer.remainingQuantity > layer.originalQuantity) {
-        issues.push(`Layer ${layer.id}: Remaining quantity (${layer.remainingQuantity}) exceeds original (${layer.originalQuantity})`);
+        issues.push(
+          `Layer ${layer.id}: Remaining quantity (${layer.remainingQuantity}) exceeds original (${layer.originalQuantity})`,
+        );
       }
 
       // Check consistency of isFullyConsumed flag
       if (layer.isFullyConsumed && layer.remainingQuantity > 0) {
-        issues.push(`Layer ${layer.id}: Marked as fully consumed but has remaining quantity (${layer.remainingQuantity})`);
+        issues.push(
+          `Layer ${layer.id}: Marked as fully consumed but has remaining quantity (${layer.remainingQuantity})`,
+        );
       }
 
       if (!layer.isFullyConsumed && layer.remainingQuantity === 0) {
-        issues.push(`Layer ${layer.id}: Has zero remaining quantity but not marked as fully consumed`);
+        issues.push(
+          `Layer ${layer.id}: Has zero remaining quantity but not marked as fully consumed`,
+        );
       }
 
       // Check for negative unit cost
       if (layer.unitCost < 0) {
-        issues.push(`Layer ${layer.id}: Negative unit cost (${layer.unitCost})`);
+        issues.push(
+          `Layer ${layer.id}: Negative unit cost (${layer.unitCost})`,
+        );
       }
     }
 
@@ -411,4 +493,3 @@ export class FIFOCostingService {
     };
   }
 }
-

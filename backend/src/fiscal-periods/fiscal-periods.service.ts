@@ -347,4 +347,3 @@ export class FiscalPeriodsService {
     return await this.findPeriodByDate(today);
   }
 }
-

@@ -20,10 +20,15 @@ import { AccountSubCategory } from '../../common/enums/account-sub-category.enum
 import { FinancialStatement } from '../../common/enums/financial-statement.enum';
 
 export class CreateAccountDto {
-  @ApiPropertyOptional({ example: '1-0000', description: 'Account code (auto-generated if not provided)' })
+  @ApiPropertyOptional({
+    example: '1-0000',
+    description: 'Account code (auto-generated if not provided)',
+  })
   @IsOptional()
   @IsString()
-  @Matches(/^[0-9-]+$/, { message: 'Account code must contain only numbers and hyphens' })
+  @Matches(/^[0-9-]+$/, {
+    message: 'Account code must contain only numbers and hyphens',
+  })
   @MaxLength(20)
   code?: string;
 
@@ -33,7 +38,10 @@ export class CreateAccountDto {
   @MaxLength(200)
   name: string;
 
-  @ApiPropertyOptional({ example: 'uuid', description: 'Parent account ID (null for root accounts)' })
+  @ApiPropertyOptional({
+    example: 'uuid',
+    description: 'Parent account ID (null for root accounts)',
+  })
   @IsOptional()
   @IsUUID('4')
   parentAccountId?: string | null;
@@ -151,17 +159,25 @@ export class CreateAccountDto {
   @MaxLength(50)
   gst?: string;
 
-  @ApiPropertyOptional({ example: { bankName: 'MCB', accountNumber: '1234567890' } })
+  @ApiPropertyOptional({
+    example: { bankName: 'MCB', accountNumber: '1234567890' },
+  })
   @IsOptional()
   metadata?: Record<string, any>;
 
   // Phase 1 GL Foundation Fields
-  @ApiPropertyOptional({ enum: AccountSubCategory, example: AccountSubCategory.CURRENT_ASSET })
+  @ApiPropertyOptional({
+    enum: AccountSubCategory,
+    example: AccountSubCategory.CURRENT_ASSET,
+  })
   @IsOptional()
   @IsEnum(AccountSubCategory)
   subCategory?: AccountSubCategory;
 
-  @ApiPropertyOptional({ enum: FinancialStatement, example: FinancialStatement.BALANCE_SHEET })
+  @ApiPropertyOptional({
+    enum: FinancialStatement,
+    example: FinancialStatement.BALANCE_SHEET,
+  })
   @IsOptional()
   @IsEnum(FinancialStatement)
   financialStatement?: FinancialStatement;
@@ -208,4 +224,3 @@ export class CreateAccountDto {
   @IsBoolean()
   allowDirectPosting?: boolean;
 }
-

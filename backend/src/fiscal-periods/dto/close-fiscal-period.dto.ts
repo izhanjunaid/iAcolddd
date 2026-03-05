@@ -9,4 +9,3 @@ export class CloseFiscalPeriodDto {
   @IsUUID()
   periodId: string;
 }
-

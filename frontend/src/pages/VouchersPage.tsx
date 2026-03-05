@@ -52,7 +52,7 @@ export const VouchersPage = () => {
       if (toDate) filters.toDate = toDate;
 
       const response = await vouchersService.getVouchers(filters);
-      setVouchers(response.data);
+      setVouchers(response.items);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load vouchers');
     } finally {

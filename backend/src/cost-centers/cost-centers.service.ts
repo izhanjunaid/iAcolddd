@@ -189,9 +189,7 @@ export class CostCentersService {
     if (updateDto.parentId) {
       // Cannot set self as parent
       if (updateDto.parentId === id) {
-        throw new BadRequestException(
-          'Cost center cannot be its own parent',
-        );
+        throw new BadRequestException('Cost center cannot be its own parent');
       }
 
       // Validate parent exists
@@ -312,4 +310,3 @@ export class CostCentersService {
     return descendants;
   }
 }
-

@@ -53,7 +53,9 @@ const addBillingPermissions = async () => {
     );
 
     if (roleResult.length === 0) {
-      console.log('⚠️  Super Admin role not found. Please run the main seed first.');
+      console.log(
+        '⚠️  Super Admin role not found. Please run the main seed first.',
+      );
       await dataSource.destroy();
       process.exit(1);
     }

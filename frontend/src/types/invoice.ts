@@ -11,6 +11,8 @@ export enum InvoiceType {
   STORAGE = 'STORAGE',
   SERVICE = 'SERVICE',
   MIXED = 'MIXED',
+  CREDIT_NOTE = 'CREDIT_NOTE',
+  DEBIT_NOTE = 'DEBIT_NOTE',
 }
 
 export interface InvoiceLineItem {
@@ -63,6 +65,7 @@ export interface Invoice {
 
   // Payment tracking
   amountPaid: number;
+  creditsApplied?: number;
   balanceDue: number;
   paymentTermsDays: number;
 

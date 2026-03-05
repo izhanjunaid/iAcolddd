@@ -6,7 +6,7 @@ export class CreateCostCenters1729700100000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Create cost_centers table
     await queryRunner.query(`
-      CREATE TABLE "cost_centers" (
+      CREATE TABLE IF NOT EXISTS "cost_centers" (
         "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         "code" VARCHAR(20) UNIQUE NOT NULL,
         "name" VARCHAR(200) NOT NULL,
@@ -34,40 +34,43 @@ export class CreateCostCenters1729700100000 implements MigrationInterface {
 
     // Create indexes
     await queryRunner.query(`
-      CREATE INDEX "idx_cost_centers_code" ON "cost_centers"("code");
+      CREATE INDEX IF NOT EXISTS "idx_cost_centers_code" ON "cost_centers"("code");
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "idx_cost_centers_parent" ON "cost_centers"("parent_id");
+      CREATE INDEX IF NOT EXISTS "idx_cost_centers_parent" ON "cost_centers"("parent_id");
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "idx_cost_centers_active" ON "cost_centers"("is_active");
+      CREATE INDEX IF NOT EXISTS "idx_cost_centers_active" ON "cost_centers"("is_active");
     `);
 
-    // Add cost_center_id to voucher_details
+    // Add cost_center_id to voucher_detail
     await queryRunner.query(`
-      ALTER TABLE "voucher_details" 
-      ADD COLUMN "cost_center_id" uuid;
-    `);
-
-    await queryRunner.query(`
-      ALTER TABLE "voucher_details"
-      ADD CONSTRAINT "fk_voucher_detail_cost_center"
-      FOREIGN KEY ("cost_center_id")
-      REFERENCES "cost_centers"("id")
-      ON DELETE RESTRICT;
+      ALTER TABLE "voucher_detail" 
+      ADD COLUMN IF NOT EXISTS "cost_center_id" uuid;
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "idx_voucher_detail_cost_center" 
-      ON "voucher_details"("cost_center_id");
+      DO $$ BEGIN
+        ALTER TABLE "voucher_detail"
+        ADD CONSTRAINT "fk_voucher_detail_cost_center"
+        FOREIGN KEY ("cost_center_id")
+        REFERENCES "cost_centers"("id")
+        ON DELETE RESTRICT;
+      EXCEPTION WHEN duplicate_object THEN null;
+      END $$;
+    `);
+
+    await queryRunner.query(`
+      CREATE INDEX IF NOT EXISTS "idx_voucher_detail_cost_center" 
+      ON "voucher_detail"("cost_center_id");
     `);
 
     // Add require_cost_center to accounts table
     await queryRunner.query(`
       ALTER TABLE "accounts" 
-      ADD COLUMN "require_cost_center" BOOLEAN DEFAULT FALSE;
+      ADD COLUMN IF NOT EXISTS "require_cost_center" BOOLEAN DEFAULT FALSE;
     `);
 
     await queryRunner.query(`
@@ -108,4 +111,3 @@ export class CreateCostCenters1729700100000 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE IF EXISTS "cost_centers";`);
   }
 }
-

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fiscalPeriodsApi } from '../services/fiscal-periods';
+import { billingService } from '../services/billingService';
+import { toast } from 'sonner';
 import type { FiscalYear, FiscalPeriod, CreateFiscalYearDto } from '../types/fiscal-period';
 
 export default function FiscalPeriodsPage() {
@@ -94,6 +96,34 @@ export default function FiscalPeriodsPage() {
     }
   };
 
+  const handleRunAccruals = async (periodEndDate: string) => {
+    try {
+      setLoading(true);
+      await billingService.runAccrual(periodEndDate);
+      toast.success('Accruals run successfully');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to run accruals');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleYearEndClose = async (year: FiscalYear) => {
+    if (!confirm(`Are you sure you want to close Fiscal Year ${year.year}? This runs year-end closing journals and permanently locks the year.`)) {
+      return;
+    }
+    try {
+      setLoading(true);
+      await fiscalPeriodsApi.closeYear(year.id);
+      toast.success('Year-end closing completed successfully');
+      await loadFiscalYears();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to close fiscal year');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getPeriodStatusClass = (period: FiscalPeriod) => {
     if (period.isClosed) {
       return 'bg-red-100 text-red-800 border-red-200';
@@ -172,15 +202,23 @@ export default function FiscalPeriodsPage() {
                       {new Date(fiscalYear.startDate).toLocaleDateString()} - {new Date(fiscalYear.endDate).toLocaleDateString()}
                     </p>
                   </div>
-                  <div>
+                  <div className="flex gap-2">
                     {fiscalYear.isClosed ? (
                       <span className="px-3 py-1 bg-red-100 text-red-800 rounded text-sm font-medium">
                         Closed
                       </span>
                     ) : (
-                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded text-sm font-medium">
-                        Open
-                      </span>
+                      <>
+                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded text-sm font-medium">
+                          Open
+                        </span>
+                        <button
+                          onClick={() => handleYearEndClose(fiscalYear)}
+                          className="px-3 py-1 bg-purple-600 text-white rounded text-sm font-medium hover:bg-purple-700"
+                        >
+                          Year-End Close
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -225,6 +263,14 @@ export default function FiscalPeriodsPage() {
                               className="w-full px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
                             >
                               Reopen Period
+                            </button>
+                          )}
+                          {!period.isClosed && (
+                            <button
+                              onClick={() => handleRunAccruals(new Date(period.endDate).toISOString().split('T')[0])}
+                              className="w-full px-3 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 mt-1"
+                            >
+                              Run Storage Accruals
                             </button>
                           )}
                         </div>

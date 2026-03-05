@@ -10,7 +10,12 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { VouchersService } from './vouchers.service';
 import { CreateVoucherDto, UpdateVoucherDto, QueryVouchersDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -85,4 +90,3 @@ export class VouchersController {
     return this.vouchersService.getNextVoucherNumber(type as any);
   }
 }
-

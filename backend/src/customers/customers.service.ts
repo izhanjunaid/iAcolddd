@@ -13,49 +13,35 @@ import { AccountType } from '../common/enums/account-type.enum';
 import { AccountNature } from '../common/enums/account-nature.enum';
 import { AccountCategory } from '../common/enums/account-category.enum';
 import { GeneralLedgerService } from '../general-ledger/general-ledger.service';
+import { GlAccountConfiguration } from '../common/entities/gl-account-configuration.entity';
 
 @Injectable()
 export class CustomersService {
   constructor(
     @InjectRepository(Customer)
     private customerRepository: Repository<Customer>,
+    @InjectRepository(GlAccountConfiguration)
+    private glConfigRepository: Repository<GlAccountConfiguration>,
     private accountsService: AccountsService,
     private dataSource: DataSource,
     private generalLedgerService: GeneralLedgerService,
-  ) { }
+  ) {}
 
   /**
-   * Create a new customer with an associated AR account
-   * Uses database transaction to ensure data consistency
+   * Create a new customer and link to the universal AR account
    */
-  async create(createCustomerDto: CreateCustomerDto, userId: string): Promise<Customer> {
-    // Use transaction to ensure both customer and account are created atomically
+  async create(
+    createCustomerDto: CreateCustomerDto,
+    userId: string,
+  ): Promise<Customer> {
     return await this.dataSource.transaction(async (manager) => {
       // 1. Generate customer code (CUST-0001, CUST-0002, etc.)
       const customerCode = await this.getNextCustomerCode();
 
-      // 2. Generate account code (02-0001, 02-0002, etc.)
-      const accountCode = this.generateAccountCode(customerCode);
+      // 2. Get the actual generic Accounts Receivable Control Account UUID
+      const customersParentAccountId = await this.getCustomersParentAccountId();
 
-      // 3. Get or create the "Customers" parent account (02)
-      const customersParentAccountId = await this.getCustomersParentAccountId(userId);
-
-      // 4. Create AR account in Chart of Accounts
-      const arAccount = await this.accountsService.create(
-        {
-          code: accountCode,
-          name: createCustomerDto.name,
-          accountType: AccountType.DETAIL,
-          nature: AccountNature.DEBIT, // AR is a debit account
-          category: AccountCategory.CUSTOMER,
-          parentAccountId: customersParentAccountId,
-          openingBalance: 0,
-          isActive: createCustomerDto.isActive ?? true,
-        },
-        userId,
-      );
-
-      // 5. Create customer record
+      // 3. Create customer record
       const customer = manager.create(Customer, {
         code: customerCode,
         name: createCustomerDto.name,
@@ -74,7 +60,7 @@ export class CustomersService {
         graceDays: createCustomerDto.graceDays ?? 3,
         taxId: createCustomerDto.taxId,
         gstNumber: createCustomerDto.gstNumber,
-        receivableAccountId: arAccount.id,
+        receivableAccountId: customersParentAccountId, // Points purely to the GL AR control account!
         isActive: createCustomerDto.isActive ?? true,
         metadata: createCustomerDto.metadata,
         createdById: userId,
@@ -82,15 +68,6 @@ export class CustomersService {
 
       await manager.save(customer);
 
-      // 6. Update the account with customer reference (bidirectional link)
-      await manager
-        .createQueryBuilder()
-        .update('accounts')
-        .set({ customerId: customer.id })
-        .where('id = :accountId', { accountId: arAccount.id })
-        .execute();
-
-      // 7. Return customer with related account
       const createdCustomer = await manager.findOne(Customer, {
         where: { id: customer.id },
         relations: ['receivableAccount'],
@@ -113,7 +90,16 @@ export class CustomersService {
     page: number;
     limit: number;
   }> {
-    const { search, isActive, city, state, page = 1, limit = 20, sortBy = 'name', sortOrder = 'ASC' } = queryDto;
+    const {
+      search,
+      isActive,
+      city,
+      state,
+      page = 1,
+      limit = 20,
+      sortBy = 'name',
+      sortOrder = 'ASC',
+    } = queryDto;
 
     const where: FindOptionsWhere<Customer> = {};
 
@@ -186,9 +172,12 @@ export class CustomersService {
 
   /**
    * Update a customer
-   * Note: Account name is automatically synced
    */
-  async update(id: string, updateCustomerDto: UpdateCustomerDto, userId: string): Promise<Customer> {
+  async update(
+    id: string,
+    updateCustomerDto: UpdateCustomerDto,
+    userId: string,
+  ): Promise<Customer> {
     const customer = await this.findOne(id);
 
     // Update customer fields
@@ -198,15 +187,6 @@ export class CustomersService {
     });
 
     await this.customerRepository.save(customer);
-
-    // If name changed, sync with account
-    if (updateCustomerDto.name && updateCustomerDto.name !== customer.name) {
-      await this.accountsService.update(
-        customer.receivableAccountId,
-        { name: updateCustomerDto.name },
-        userId,
-      );
-    }
 
     return await this.findOne(id);
   }
@@ -222,13 +202,10 @@ export class CustomersService {
     // For now, just soft delete
 
     await this.customerRepository.softDelete(id);
-
-    // Also soft delete the associated account
-    await this.accountsService.remove(customer.receivableAccountId);
   }
 
   /**
-   * Get customer's current balance from general ledger
+   * Get customer's current balance from the Subledger (Invoices)
    */
   async getBalance(id: string): Promise<{
     customerId: string;
@@ -239,24 +216,32 @@ export class CustomersService {
   }> {
     const customer = await this.findOne(id);
 
-    const accountBalance = await this.generalLedgerService.getAccountBalance(customer.receivableAccountId);
+    // Sum all unpaid invoices as the DR balance.
+    // In a full implementation, we'd also subtract unapplied CR Vouchers or Payments.
+    const result = await this.dataSource.query(
+      `SELECT COALESCE(SUM(balance_due), 0) as balance FROM invoices WHERE customer_id = $1 AND status NOT IN ('DRAFT', 'CANCELLED')`,
+      [id],
+    );
+    const balance = parseFloat(result[0].balance || 0);
 
     return {
       customerId: customer.id,
       customerName: customer.name,
-      accountCode: customer.receivableAccount.code,
-      balance: accountBalance.currentBalance,
-      balanceType: accountBalance.balanceType,
+      accountCode: customer.receivableAccount?.code || '1-1100', // The AR Control Account code
+      balance: balance,
+      balanceType: balance >= 0 ? 'DR' : 'CR',
     };
   }
-
   /**
    * Generate the next customer code (CUST-0001, CUST-0002, etc.)
    */
   private async getNextCustomerCode(): Promise<string> {
-    const lastCustomer = await this.customerRepository.findOne({
-      order: { code: 'DESC' },
-    });
+    // Only match standard CUST-NNNN pattern (ignore special codes like CUST-GOV-001)
+    const lastCustomer = await this.customerRepository
+      .createQueryBuilder('c')
+      .where("c.code ~ '^CUST-[0-9]+$'")
+      .orderBy('c.code', 'DESC')
+      .getOne();
 
     if (!lastCustomer) {
       return 'CUST-0001';
@@ -268,39 +253,17 @@ export class CustomersService {
   }
 
   /**
-   * Generate account code from customer code
-   * CUST-0001 → 02-0001
-   * CUST-0042 → 02-0042
+   * Get the designated Accounts Receivable parent account from global config
    */
-  private generateAccountCode(customerCode: string): string {
-    const number = customerCode.split('-')[1];
-    return `02-${number}`;
-  }
-
-  /**
-   * Get or create the "Customers" parent account (code: 02)
-   */
-  private async getCustomersParentAccountId(userId: string): Promise<string> {
-    // Try to find existing "Customers" parent account
-    let parentAccount = await this.accountsService.findByCode('02');
-
-    if (!parentAccount) {
-      // Create the parent account if it doesn't exist
-      parentAccount = await this.accountsService.create(
-        {
-          code: '02',
-          name: 'Customers',
-          accountType: AccountType.CONTROL,
-          nature: AccountNature.DEBIT,
-          category: AccountCategory.CUSTOMER,
-          openingBalance: 0,
-          isActive: true,
-        },
-        userId,
+  private async getCustomersParentAccountId(): Promise<string> {
+    const config = await this.glConfigRepository.findOne({
+      where: { configKey: 'ACCOUNTS_RECEIVABLE', isActive: true },
+    });
+    if (!config || !config.accountId) {
+      throw new Error(
+        'Critical Configuration Error: ACCOUNTS_RECEIVABLE GL configuration is missing.',
       );
     }
-
-    return parentAccount.id;
+    return config.accountId;
   }
 }
-

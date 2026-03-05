@@ -13,7 +13,7 @@ export class VoucherDetail {
   id: string;
 
   @ManyToOne(() => VoucherMaster, (voucher) => voucher.details, {
-    onDelete: 'CASCADE',
+    onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'voucher_id' })
   voucher: VoucherMaster;
@@ -30,10 +30,22 @@ export class VoucherDetail {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ name: 'debit_amount', type: 'decimal', precision: 18, scale: 2, default: 0 })
+  @Column({
+    name: 'debit_amount',
+    type: 'decimal',
+    precision: 18,
+    scale: 2,
+    default: 0,
+  })
   debitAmount: number;
 
-  @Column({ name: 'credit_amount', type: 'decimal', precision: 18, scale: 2, default: 0 })
+  @Column({
+    name: 'credit_amount',
+    type: 'decimal',
+    precision: 18,
+    scale: 2,
+    default: 0,
+  })
   creditAmount: number;
 
   @Column({ name: 'line_number', type: 'integer' })
@@ -42,4 +54,3 @@ export class VoucherDetail {
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, any>;
 }
-

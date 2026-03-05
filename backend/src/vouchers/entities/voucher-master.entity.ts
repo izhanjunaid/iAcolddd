@@ -65,7 +65,13 @@ export class VoucherMaster {
   @Column({ name: 'reference_number', length: 50, nullable: true })
   referenceNumber: string;
 
-  @Column({ name: 'total_amount', type: 'decimal', precision: 18, scale: 2, default: 0 })
+  @Column({
+    name: 'total_amount',
+    type: 'decimal',
+    precision: 18,
+    scale: 2,
+    default: 0,
+  })
   totalAmount: number;
 
   @Column({ name: 'is_posted', type: 'boolean', default: false })
@@ -112,4 +118,3 @@ export class VoucherMaster {
   })
   details: VoucherDetail[];
 }
-

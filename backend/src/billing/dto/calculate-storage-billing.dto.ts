@@ -1,4 +1,12 @@
-import { IsNotEmpty, IsNumber, IsDate, IsOptional, IsString, IsEnum, Min } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsDate,
+  IsOptional,
+  IsString,
+  IsEnum,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -33,28 +41,47 @@ export class CalculateStorageBillingDto {
   @Min(0, { message: 'Rate cannot be negative' })
   ratePerKgPerDay?: number;
 
-  @ApiProperty({ description: 'Customer ID for customer-specific rates', required: false })
+  @ApiProperty({
+    description: 'Customer ID for customer-specific rates',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   customerId?: string;
 
-  @ApiProperty({ description: 'Product category ID for category-specific rates', required: false })
+  @ApiProperty({
+    description: 'Product category ID for category-specific rates',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   productCategoryId?: string;
 
-  @ApiProperty({ description: 'Rate type', enum: RateType, required: false, default: RateType.DAILY })
+  @ApiProperty({
+    description: 'Rate type',
+    enum: RateType,
+    required: false,
+    default: RateType.DAILY,
+  })
   @IsOptional()
   @IsEnum(RateType)
   rateType?: RateType;
 
-  @ApiProperty({ description: 'Labour charges for loading', required: false, default: 0 })
+  @ApiProperty({
+    description: 'Labour charges for loading',
+    required: false,
+    default: 0,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
   labourChargesIn?: number;
 
-  @ApiProperty({ description: 'Labour charges for unloading', required: false, default: 0 })
+  @ApiProperty({
+    description: 'Labour charges for unloading',
+    required: false,
+    default: 0,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -66,7 +93,11 @@ export class CalculateStorageBillingDto {
   @Min(0)
   loadingCharges?: number;
 
-  @ApiProperty({ description: 'Other miscellaneous charges', required: false, default: 0 })
+  @ApiProperty({
+    description: 'Other miscellaneous charges',
+    required: false,
+    default: 0,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)

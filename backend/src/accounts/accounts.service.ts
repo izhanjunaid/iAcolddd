@@ -21,7 +21,10 @@ export class AccountsService {
   // CRUD OPERATIONS
   // ===========================================
 
-  async create(createAccountDto: CreateAccountDto, userId: string): Promise<Account> {
+  async create(
+    createAccountDto: CreateAccountDto,
+    userId: string,
+  ): Promise<Account> {
     // Validate parent account if provided
     if (createAccountDto.parentAccountId) {
       const parent = await this.findOne(createAccountDto.parentAccountId);
@@ -48,9 +51,7 @@ export class AccountsService {
     } else {
       // Root accounts must be CONTROL
       if (createAccountDto.accountType !== AccountType.CONTROL) {
-        throw new BadRequestException(
-          'Root accounts must be of type CONTROL',
-        );
+        throw new BadRequestException('Root accounts must be of type CONTROL');
       }
     }
 
@@ -89,7 +90,12 @@ export class AccountsService {
     limit: number;
     totalPages: number;
   }> {
-    const { page = 1, limit = 20, sortBy = 'code', sortOrder = 'ASC' } = queryDto;
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = 'code',
+      sortOrder = 'ASC',
+    } = queryDto;
 
     const queryBuilder = this.accountRepository
       .createQueryBuilder('account')
@@ -271,7 +277,10 @@ export class AccountsService {
     return this.buildTree(allAccounts);
   }
 
-  private buildTree(accounts: Account[], parentId: string | null = null): Account[] {
+  private buildTree(
+    accounts: Account[],
+    parentId: string | null = null,
+  ): Account[] {
     const children = accounts.filter(
       (account) => account.parentAccountId === parentId,
     );
@@ -397,4 +406,3 @@ export class AccountsService {
     });
   }
 }
-

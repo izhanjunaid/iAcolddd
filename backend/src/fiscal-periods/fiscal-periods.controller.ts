@@ -8,8 +8,14 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { FiscalPeriodsService } from './fiscal-periods.service';
+import { YearEndClosingService } from './year-end-closing.service';
 import {
   CreateFiscalYearDto,
   CloseFiscalPeriodDto,
@@ -24,7 +30,10 @@ import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('fiscal-periods')
 export class FiscalPeriodsController {
-  constructor(private readonly fiscalPeriodsService: FiscalPeriodsService) {}
+  constructor(
+    private readonly fiscalPeriodsService: FiscalPeriodsService,
+    private readonly yearEndClosingService: YearEndClosingService,
+  ) {}
 
   @Post('years')
   @RequirePermissions('fiscal-periods.create')
@@ -64,6 +73,36 @@ export class FiscalPeriodsController {
     return await this.fiscalPeriodsService.findOne(id);
   }
 
+  @Get('years/:id/year-end-preview')
+  @RequirePermissions('fiscal-periods.close')
+  @ApiOperation({ summary: 'Preview year-end closing entry without executing' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Returns preview of closing entry with revenue/expense breakdown',
+  })
+  async previewYearEndClosing(@Param('id') id: string) {
+    return await this.yearEndClosingService.previewYearEndClosing(id);
+  }
+
+  @Post('years/:id/close-year')
+  @RequirePermissions('fiscal-periods.close')
+  @ApiOperation({
+    summary:
+      'Execute year-end closing: transfer net income to Retained Earnings and lock year',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Fiscal year closed, closing journal voucher created',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Year already closed or periods still open',
+  })
+  async closeYear(@Param('id') id: string, @Req() req: any) {
+    return await this.yearEndClosingService.closeYear(id, req.user.id);
+  }
+
   @Get('periods/:id')
   @RequirePermissions('fiscal-periods.read')
   @ApiOperation({ summary: 'Get a fiscal period by ID' })
@@ -96,10 +135,7 @@ export class FiscalPeriodsController {
     description: 'Period already closed or prior periods are open',
   })
   async closePeriod(@Body() closeDto: CloseFiscalPeriodDto, @Req() req: any) {
-    return await this.fiscalPeriodsService.closePeriod(
-      closeDto,
-      req.user.id,
-    );
+    return await this.fiscalPeriodsService.closePeriod(closeDto, req.user.id);
   }
 
   @Post('periods/:id/reopen')
@@ -117,4 +153,3 @@ export class FiscalPeriodsController {
     return await this.fiscalPeriodsService.reopenPeriod(id);
   }
 }
-

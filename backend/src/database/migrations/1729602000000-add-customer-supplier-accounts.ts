@@ -7,25 +7,34 @@ export class AddCustomerSupplierAccounts1729602000000
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Add CUSTOMER and SUPPLIER to account_category enum
+    // Add CUSTOMER and SUPPLIER to account_category enum (renamed from account_category_enum in DB)
     await queryRunner.query(`
-      ALTER TYPE "account_category_enum" 
-      ADD VALUE IF NOT EXISTS 'CUSTOMER';
+      DO $$ 
+      BEGIN 
+        ALTER TYPE "account_category" ADD VALUE IF NOT EXISTS 'CUSTOMER'; 
+      EXCEPTION 
+        WHEN duplicate_object THEN null; 
+      END $$;
     `);
 
     await queryRunner.query(`
-      ALTER TYPE "account_category_enum" 
-      ADD VALUE IF NOT EXISTS 'SUPPLIER';
+      DO $$ 
+      BEGIN 
+        ALTER TYPE "account_category" ADD VALUE IF NOT EXISTS 'SUPPLIER'; 
+      EXCEPTION 
+        WHEN duplicate_object THEN null; 
+      END $$;
     `);
 
     // Add customer_id column to accounts table
     await queryRunner.query(`
       ALTER TABLE "accounts" 
-      ADD COLUMN "customer_id" uuid NULL;
+      ADD COLUMN IF NOT EXISTS "customer_id" uuid NULL;
     `);
 
     // Add index for customer_id for better query performance
     await queryRunner.query(`
-      CREATE INDEX "IDX_accounts_customer_id" 
+      CREATE INDEX IF NOT EXISTS "IDX_accounts_customer_id" 
       ON "accounts"("customer_id");
     `);
 
@@ -53,4 +62,3 @@ export class AddCustomerSupplierAccounts1729602000000
     // This is acceptable as they won't cause issues
   }
 }
-

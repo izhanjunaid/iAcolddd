@@ -1,7 +1,16 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual, MoreThanOrEqual, IsNull, Or } from 'typeorm';
-import { CalculateStorageBillingDto, RateType } from '../dto/calculate-storage-billing.dto';
+import {
+  Repository,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  IsNull,
+  Or,
+} from 'typeorm';
+import {
+  CalculateStorageBillingDto,
+  RateType,
+} from '../dto/calculate-storage-billing.dto';
 import { StorageBillingResultDto } from '../dto/storage-billing-result.dto';
 import { BillingRateConfiguration } from '../../common/entities/billing-rate-configuration.entity';
 import { TaxService } from '../../tax/tax.service';
@@ -29,7 +38,9 @@ export class StorageBillingService {
   async calculateStorageBilling(
     dto: CalculateStorageBillingDto,
   ): Promise<StorageBillingResultDto> {
-    this.logger.log(`Calculating storage billing for ${dto.weight} kg from ${dto.dateIn} to ${dto.dateOut}`);
+    this.logger.log(
+      `Calculating storage billing for ${dto.weight} kg from ${dto.dateIn} to ${dto.dateOut}`,
+    );
 
     // Validate dates
     this.validateDates(dto.dateIn, dto.dateOut);
@@ -48,12 +59,14 @@ export class StorageBillingService {
     );
 
     // Calculate labour and other charges
-    const labourCharges = (dto.labourChargesIn || 0) + (dto.labourChargesOut || 0);
+    const labourCharges =
+      (dto.labourChargesIn || 0) + (dto.labourChargesOut || 0);
     const loadingCharges = dto.loadingCharges || 0;
     const otherCharges = dto.otherCharges || 0;
 
     // Calculate subtotal
-    const subtotal = storageCharges + labourCharges + loadingCharges + otherCharges;
+    const subtotal =
+      storageCharges + labourCharges + loadingCharges + otherCharges;
 
     // Calculate taxes if applicable
     let gstAmount = 0;
@@ -110,7 +123,9 @@ export class StorageBillingService {
       breakdown,
     };
 
-    this.logger.log(`Billing calculation complete: Total = PKR ${totalAmount.toLocaleString()}`);
+    this.logger.log(
+      `Billing calculation complete: Total = PKR ${totalAmount.toLocaleString()}`,
+    );
     return result;
   }
 
@@ -149,7 +164,10 @@ export class StorageBillingService {
    * Determine applicable rate based on customer, category, or duration
    * Priority: Provided rate > Customer-specific > Category-specific > Duration-based from DB > Fallback
    */
-  private async determineRate(dto: CalculateStorageBillingDto, daysStored: number): Promise<number> {
+  private async determineRate(
+    dto: CalculateStorageBillingDto,
+    daysStored: number,
+  ): Promise<number> {
     // If rate explicitly provided, use it
     if (dto.ratePerKgPerDay !== undefined && dto.ratePerKgPerDay > 0) {
       return dto.ratePerKgPerDay;
@@ -167,7 +185,9 @@ export class StorageBillingService {
       );
 
       if (customerRate) {
-        this.logger.log(`Using customer-specific rate: PKR ${customerRate} for customer ${dto.customerId}`);
+        this.logger.log(
+          `Using customer-specific rate: PKR ${customerRate} for customer ${dto.customerId}`,
+        );
         return customerRate;
       }
     }
@@ -182,26 +202,38 @@ export class StorageBillingService {
       );
 
       if (categoryRate) {
-        this.logger.log(`Using category-specific rate: PKR ${categoryRate} for category ${dto.productCategoryId}`);
+        this.logger.log(
+          `Using category-specific rate: PKR ${categoryRate} for category ${dto.productCategoryId}`,
+        );
         return categoryRate;
       }
     }
 
     // Fetch default rate from database based on rate type
     const rateTypeStr = this.getRateTypeString(dto.rateType, daysStored);
-    const defaultRate = await this.findApplicableRate(rateTypeStr, null, null, today);
+    const defaultRate = await this.findApplicableRate(
+      rateTypeStr,
+      null,
+      null,
+      today,
+    );
 
     if (defaultRate) {
-      this.logger.log(`Using default ${rateTypeStr} rate from database: PKR ${defaultRate}`);
+      this.logger.log(
+        `Using default ${rateTypeStr} rate from database: PKR ${defaultRate}`,
+      );
       return defaultRate;
     }
 
     // Fall back to hardcoded rates if database configuration is missing
-    this.logger.warn(`No rate configuration found in database, using fallback rates`);
-    if (dto.rateType === RateType.SEASONAL || daysStored >= 30) {
-      return this.FALLBACK_SEASONAL_RATE;
-    } else if (dto.rateType === RateType.MONTHLY || daysStored >= 60) {
+    this.logger.warn(
+      `No rate configuration found in database, using fallback rates`,
+    );
+    // Check monthly FIRST (60+ days), then seasonal (30+ days), otherwise daily
+    if (dto.rateType === RateType.MONTHLY || daysStored >= 60) {
       return this.FALLBACK_MONTHLY_RATE;
+    } else if (dto.rateType === RateType.SEASONAL || daysStored >= 30) {
+      return this.FALLBACK_SEASONAL_RATE;
     } else {
       return this.FALLBACK_DAILY_RATE;
     }
@@ -234,7 +266,9 @@ export class StorageBillingService {
       }
 
       if (productCategoryId) {
-        queryBuilder.andWhere('rate.productCategoryId = :productCategoryId', { productCategoryId });
+        queryBuilder.andWhere('rate.productCategoryId = :productCategoryId', {
+          productCategoryId,
+        });
       } else {
         queryBuilder.andWhere('rate.productCategoryId IS NULL');
       }
@@ -254,7 +288,10 @@ export class StorageBillingService {
   /**
    * Get rate type string based on DTO and days stored
    */
-  private getRateTypeString(rateType: RateType | undefined, daysStored: number): string {
+  private getRateTypeString(
+    rateType: RateType | undefined,
+    daysStored: number,
+  ): string {
     if (rateType === RateType.SEASONAL) return 'seasonal';
     if (rateType === RateType.MONTHLY) return 'monthly';
     if (daysStored >= 60) return 'monthly';
@@ -285,7 +322,9 @@ export class StorageBillingService {
    * Calculate seasonal billing (30-day blocks)
    * For future enhancement
    */
-  async calculateSeasonalBilling(dto: CalculateStorageBillingDto): Promise<StorageBillingResultDto> {
+  async calculateSeasonalBilling(
+    dto: CalculateStorageBillingDto,
+  ): Promise<StorageBillingResultDto> {
     const modifiedDto = {
       ...dto,
       rateType: RateType.SEASONAL,
@@ -298,7 +337,9 @@ export class StorageBillingService {
    * Calculate monthly billing (custom day ranges)
    * For future enhancement
    */
-  async calculateMonthlyBilling(dto: CalculateStorageBillingDto): Promise<StorageBillingResultDto> {
+  async calculateMonthlyBilling(
+    dto: CalculateStorageBillingDto,
+  ): Promise<StorageBillingResultDto> {
     const modifiedDto = {
       ...dto,
       rateType: RateType.MONTHLY,

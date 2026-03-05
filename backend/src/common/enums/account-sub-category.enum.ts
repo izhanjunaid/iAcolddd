@@ -25,4 +25,3 @@ export enum AccountSubCategory {
   FINANCIAL_EXPENSE = 'FINANCIAL_EXPENSE',
   OTHER_EXPENSE = 'OTHER_EXPENSE',
 }
-

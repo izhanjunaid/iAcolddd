@@ -26,7 +26,8 @@ export class RegisterDto {
   email: string;
 
   @ApiProperty({
-    description: 'Password (minimum 8 characters, must include uppercase, lowercase, number)',
+    description:
+      'Password (minimum 8 characters, must include uppercase, lowercase, number)',
     example: 'Password@123',
   })
   @IsString()
@@ -54,4 +55,3 @@ export class RegisterDto {
   @IsString()
   phone?: string;
 }
-

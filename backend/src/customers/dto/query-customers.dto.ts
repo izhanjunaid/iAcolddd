@@ -1,5 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsBoolean, IsInt, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class QueryCustomersDto {
@@ -41,7 +48,7 @@ export class QueryCustomersDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(1000)
   limit?: number = 20;
 
   @ApiPropertyOptional({ description: 'Sort by field', default: 'name' })
@@ -58,4 +65,3 @@ export class QueryCustomersDto {
   @IsString()
   sortOrder?: 'ASC' | 'DESC' = 'ASC';
 }
-

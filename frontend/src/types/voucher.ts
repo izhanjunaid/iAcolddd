@@ -34,18 +34,18 @@ export interface Voucher {
   voucherType: VoucherType;
   voucherDate: string; // ISO date string
   description?: string;
-  
+
   // Payment/Receipt specific
   paymentMode?: PaymentMode;
   chequeNumber?: string;
   chequeDate?: string;
   bankName?: string;
-  
+
   // Reference
   referenceId?: string;
   referenceType?: string;
   referenceNumber?: string;
-  
+
   totalAmount: number;
   isPosted: boolean;
   postedAt?: string;
@@ -54,7 +54,7 @@ export interface Voucher {
     username: string;
     fullName: string;
   };
-  
+
   // Audit
   createdAt: string;
   updatedAt: string;
@@ -63,7 +63,7 @@ export interface Voucher {
     username: string;
     fullName: string;
   };
-  
+
   // Line items
   details: VoucherLineItem[];
 }
@@ -105,7 +105,7 @@ export interface VoucherFilters {
 }
 
 export interface VouchersResponse {
-  data: Voucher[];
+  items: Voucher[];
   total: number;
   page: number;
   limit: number;

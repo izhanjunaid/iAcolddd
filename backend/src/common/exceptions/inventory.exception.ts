@@ -35,4 +35,3 @@ export class StockReservationException extends BadRequestException {
     super(`Stock reservation error: ${message}`);
   }
 }
-

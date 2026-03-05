@@ -24,7 +24,9 @@ const addFinancialStatementsPermissions = async () => {
     );
 
     if (parseInt(existingPermissions[0].count) > 0) {
-      console.log('⚠️  Financial Statements permissions already exist. Skipping seed.');
+      console.log(
+        '⚠️  Financial Statements permissions already exist. Skipping seed.',
+      );
       await dataSource.destroy();
       return;
     }
@@ -36,7 +38,8 @@ const addFinancialStatementsPermissions = async () => {
       {
         code: 'financial-statements.read',
         name: 'View Financial Statements',
-        description: 'View Balance Sheet, Income Statement, Cash Flow, and Analysis',
+        description:
+          'View Balance Sheet, Income Statement, Cash Flow, and Analysis',
       },
       {
         code: 'financial-statements.export',
@@ -85,7 +88,9 @@ const addFinancialStatementsPermissions = async () => {
       }
     }
 
-    console.log('\n🎉 Financial Statements permissions seed completed successfully!\n');
+    console.log(
+      '\n🎉 Financial Statements permissions seed completed successfully!\n',
+    );
     console.log('📊 Summary:');
     console.log(`   - ${permissions.length} permissions created`);
     console.log(`   - Permissions granted to Admin role\n`);

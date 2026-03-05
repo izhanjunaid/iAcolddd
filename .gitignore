@@ -56,3 +56,6 @@ run-migration.bat
 # Playwright artifacts
 .playwright-mcp/
 
+
+
+nul

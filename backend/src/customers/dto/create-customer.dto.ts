@@ -17,31 +17,46 @@ export class CreateCustomerDto {
   @MaxLength(200)
   name: string;
 
-  @ApiPropertyOptional({ description: 'Contact person name', example: 'John Doe' })
+  @ApiPropertyOptional({
+    description: 'Contact person name',
+    example: 'John Doe',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(200)
   contactPerson?: string;
 
-  @ApiPropertyOptional({ description: 'Email address', example: 'john@example.com' })
+  @ApiPropertyOptional({
+    description: 'Email address',
+    example: 'john@example.com',
+  })
   @IsOptional()
   @IsEmail()
   @MaxLength(200)
   email?: string;
 
-  @ApiPropertyOptional({ description: 'Phone number', example: '+92-300-1234567' })
+  @ApiPropertyOptional({
+    description: 'Phone number',
+    example: '+92-300-1234567',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(50)
   phone?: string;
 
-  @ApiPropertyOptional({ description: 'Mobile number', example: '+92-301-7654321' })
+  @ApiPropertyOptional({
+    description: 'Mobile number',
+    example: '+92-301-7654321',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(50)
   mobile?: string;
 
-  @ApiPropertyOptional({ description: 'Address line 1', example: '123 Main Street' })
+  @ApiPropertyOptional({
+    description: 'Address line 1',
+    example: '123 Main Street',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(200)
@@ -65,7 +80,11 @@ export class CreateCustomerDto {
   @MaxLength(100)
   state?: string;
 
-  @ApiPropertyOptional({ description: 'Country', example: 'Pakistan', default: 'Pakistan' })
+  @ApiPropertyOptional({
+    description: 'Country',
+    example: 'Pakistan',
+    default: 'Pakistan',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(100)
@@ -77,7 +96,11 @@ export class CreateCustomerDto {
   @MaxLength(20)
   postalCode?: string;
 
-  @ApiPropertyOptional({ description: 'Credit limit', example: 100000, default: 0 })
+  @ApiPropertyOptional({
+    description: 'Credit limit',
+    example: 100000,
+    default: 0,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -89,7 +112,11 @@ export class CreateCustomerDto {
   @Min(0)
   creditDays?: number;
 
-  @ApiPropertyOptional({ description: 'Grace days for rental billing', example: 3, default: 3 })
+  @ApiPropertyOptional({
+    description: 'Grace days for rental billing',
+    example: 3,
+    default: 3,
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
@@ -101,20 +128,29 @@ export class CreateCustomerDto {
   @MaxLength(50)
   taxId?: string;
 
-  @ApiPropertyOptional({ description: 'GST Registration Number', example: 'GST-123456' })
+  @ApiPropertyOptional({
+    description: 'GST Registration Number',
+    example: 'GST-123456',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(50)
   gstNumber?: string;
 
-  @ApiPropertyOptional({ description: 'Is customer active', example: true, default: true })
+  @ApiPropertyOptional({
+    description: 'Is customer active',
+    example: true,
+    default: true,
+  })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiPropertyOptional({ description: 'Additional metadata', example: { notes: 'VIP customer' } })
+  @ApiPropertyOptional({
+    description: 'Additional metadata',
+    example: { notes: 'VIP customer' },
+  })
   @IsOptional()
   @IsObject()
   metadata?: Record<string, any>;
 }
-

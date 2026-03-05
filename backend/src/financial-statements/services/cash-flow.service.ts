@@ -37,7 +37,10 @@ export class CashFlowService {
     const companyName = dto.companyName || 'Your Company Name';
 
     // 1. Calculate Net Income for the period
-    const netIncome = await this.calculateNetIncome(dto.periodStart, dto.periodEnd);
+    const netIncome = await this.calculateNetIncome(
+      dto.periodStart,
+      dto.periodEnd,
+    );
 
     // 2. Build Operating Activities section (indirect method)
     const operatingActivities = await this.buildOperatingActivitiesSection(
@@ -67,18 +70,19 @@ export class CashFlowService {
     };
 
     // 6. Calculate metrics if requested
-    const metrics = dto.includeMetrics !== false
-      ? this.calculateCashFlowMetrics({
-          operatingCashFlow: operatingActivities.netCashFromOperating,
-          netIncome,
-          revenue: await this.getRevenue(dto.periodStart, dto.periodEnd),
-          capitalExpenditure: dto.capitalExpenditure || 0,
-        })
-      : {
-          operatingCashFlowRatio: 0,
-          freeCashFlow: 0,
-          cashFlowMargin: 0,
-        };
+    const metrics =
+      dto.includeMetrics !== false
+        ? this.calculateCashFlowMetrics({
+            operatingCashFlow: operatingActivities.netCashFromOperating,
+            netIncome,
+            revenue: await this.getRevenue(dto.periodStart, dto.periodEnd),
+            capitalExpenditure: dto.capitalExpenditure || 0,
+          })
+        : {
+            operatingCashFlowRatio: 0,
+            freeCashFlow: 0,
+            cashFlowMargin: 0,
+          };
 
     const cashFlowStatement: CashFlowStatement = {
       title: 'Cash Flow Statement',
@@ -103,7 +107,10 @@ export class CashFlowService {
   /**
    * Calculate Net Income for the period
    */
-  private async calculateNetIncome(periodStart: Date, periodEnd: Date): Promise<number> {
+  private async calculateNetIncome(
+    periodStart: Date,
+    periodEnd: Date,
+  ): Promise<number> {
     // Revenue - Expenses = Net Income
     const query = this.voucherDetailRepository
       .createQueryBuilder('detail')
@@ -128,9 +135,11 @@ export class CashFlowService {
 
     for (const result of results) {
       if (result.category === AccountCategory.REVENUE) {
-        revenue = Number(result.totalCredits || 0) - Number(result.totalDebits || 0);
+        revenue =
+          Number(result.totalCredits || 0) - Number(result.totalDebits || 0);
       } else if (result.category === AccountCategory.EXPENSE) {
-        expenses = Number(result.totalDebits || 0) - Number(result.totalCredits || 0);
+        expenses =
+          Number(result.totalDebits || 0) - Number(result.totalCredits || 0);
       }
     }
 
@@ -149,7 +158,10 @@ export class CashFlowService {
     let totalAdjustments = 0;
 
     // 1. Non-cash expenses (add back)
-    const depreciation = await this.getDepreciationExpense(dto.periodStart, dto.periodEnd);
+    const depreciation = await this.getDepreciationExpense(
+      dto.periodStart,
+      dto.periodEnd,
+    );
     if (depreciation > 0) {
       adjustments.push({
         code: 'OPS-DEP',
@@ -180,7 +192,10 @@ export class CashFlowService {
     if (Math.abs(arChange) > 0.01) {
       workingCapitalChanges.push({
         code: 'WC-AR',
-        label: arChange < 0 ? 'Decrease in Accounts Receivable' : 'Increase in Accounts Receivable',
+        label:
+          arChange < 0
+            ? 'Decrease in Accounts Receivable'
+            : 'Increase in Accounts Receivable',
         amount: -arChange, // Increase in AR = use of cash (negative)
         level: 1,
         isTotal: false,
@@ -200,7 +215,10 @@ export class CashFlowService {
     if (Math.abs(inventoryChange) > 0.01) {
       workingCapitalChanges.push({
         code: 'WC-INV',
-        label: inventoryChange < 0 ? 'Decrease in Inventory' : 'Increase in Inventory',
+        label:
+          inventoryChange < 0
+            ? 'Decrease in Inventory'
+            : 'Increase in Inventory',
         amount: -inventoryChange, // Increase in inventory = use of cash (negative)
         level: 1,
         isTotal: false,
@@ -220,7 +238,10 @@ export class CashFlowService {
     if (Math.abs(apChange) > 0.01) {
       workingCapitalChanges.push({
         code: 'WC-AP',
-        label: apChange > 0 ? 'Increase in Accounts Payable' : 'Decrease in Accounts Payable',
+        label:
+          apChange > 0
+            ? 'Increase in Accounts Payable'
+            : 'Decrease in Accounts Payable',
         amount: apChange, // Increase in AP = source of cash (positive)
         level: 1,
         isTotal: false,
@@ -288,9 +309,10 @@ export class CashFlowService {
     if (Math.abs(intangiblesChange) > 0.01) {
       items.push({
         code: 'INV-INTANG',
-        label: intangiblesChange > 0
-          ? 'Purchase of Intangible Assets'
-          : 'Sale of Intangible Assets',
+        label:
+          intangiblesChange > 0
+            ? 'Purchase of Intangible Assets'
+            : 'Sale of Intangible Assets',
         amount: -intangiblesChange,
         level: 1,
         isTotal: false,
@@ -328,9 +350,10 @@ export class CashFlowService {
     if (Math.abs(longTermDebtChange) > 0.01) {
       items.push({
         code: 'FIN-DEBT',
-        label: longTermDebtChange > 0
-          ? 'Proceeds from Long-term Borrowings'
-          : 'Repayment of Long-term Borrowings',
+        label:
+          longTermDebtChange > 0
+            ? 'Proceeds from Long-term Borrowings'
+            : 'Repayment of Long-term Borrowings',
         amount: longTermDebtChange, // Increase in debt = source of cash (positive)
         level: 1,
         isTotal: false,
@@ -349,9 +372,10 @@ export class CashFlowService {
     if (Math.abs(equityChange) > 0.01) {
       items.push({
         code: 'FIN-EQUITY',
-        label: equityChange > 0
-          ? 'Proceeds from Share Capital'
-          : 'Payment of Dividends/Share Buyback',
+        label:
+          equityChange > 0
+            ? 'Proceeds from Share Capital'
+            : 'Payment of Dividends/Share Buyback',
         amount: equityChange,
         level: 1,
         isTotal: false,
@@ -400,7 +424,9 @@ export class CashFlowService {
       .leftJoin('detail.voucher', 'voucher')
       .select('SUM(detail.debit_amount)', 'totalDebits')
       .addSelect('SUM(detail.credit_amount)', 'totalCredits')
-      .where('detail.account_code = :accountCode', { accountCode: account.code })
+      .where('detail.account_code = :accountCode', {
+        accountCode: account.code,
+      })
       .andWhere('voucher.voucher_date <= :asOfDate', { asOfDate })
       .andWhere('voucher.is_posted = :isPosted', { isPosted: true })
       .andWhere('voucher.deleted_at IS NULL');
@@ -442,7 +468,10 @@ export class CashFlowService {
     let endTotal = 0;
 
     for (const account of matchingAccounts) {
-      const startBalance = await this.calculateAccountBalance(account, startDate);
+      const startBalance = await this.calculateAccountBalance(
+        account,
+        startDate,
+      );
       const endBalance = await this.calculateAccountBalance(account, endDate);
       startTotal += startBalance;
       endTotal += endBalance;
@@ -454,7 +483,10 @@ export class CashFlowService {
   /**
    * Get change in fixed assets
    */
-  private async getFixedAssetsChange(startDate: Date, endDate: Date): Promise<number> {
+  private async getFixedAssetsChange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
     const fixedAssets = await this.accountRepository.find({
       where: [
         {
@@ -474,7 +506,10 @@ export class CashFlowService {
     let endTotal = 0;
 
     for (const account of fixedAssets) {
-      const startBalance = await this.calculateAccountBalance(account, startDate);
+      const startBalance = await this.calculateAccountBalance(
+        account,
+        startDate,
+      );
       const endBalance = await this.calculateAccountBalance(account, endDate);
       startTotal += startBalance;
       endTotal += endBalance;
@@ -502,7 +537,10 @@ export class CashFlowService {
     let endTotal = 0;
 
     for (const account of intangibles) {
-      const startBalance = await this.calculateAccountBalance(account, startDate);
+      const startBalance = await this.calculateAccountBalance(
+        account,
+        startDate,
+      );
       const endBalance = await this.calculateAccountBalance(account, endDate);
       startTotal += startBalance;
       endTotal += endBalance;
@@ -530,7 +568,10 @@ export class CashFlowService {
     let endTotal = 0;
 
     for (const account of longTermLiabilities) {
-      const startBalance = await this.calculateAccountBalance(account, startDate);
+      const startBalance = await this.calculateAccountBalance(
+        account,
+        startDate,
+      );
       const endBalance = await this.calculateAccountBalance(account, endDate);
       startTotal += startBalance;
       endTotal += endBalance;
@@ -542,7 +583,10 @@ export class CashFlowService {
   /**
    * Get change in equity
    */
-  private async getEquityChange(startDate: Date, endDate: Date): Promise<number> {
+  private async getEquityChange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
     const equityAccounts = await this.accountRepository.find({
       where: {
         category: AccountCategory.EQUITY,
@@ -559,7 +603,10 @@ export class CashFlowService {
         continue;
       }
 
-      const startBalance = await this.calculateAccountBalance(account, startDate);
+      const startBalance = await this.calculateAccountBalance(
+        account,
+        startDate,
+      );
       const endBalance = await this.calculateAccountBalance(account, endDate);
       startTotal += startBalance;
       endTotal += endBalance;
@@ -582,7 +629,9 @@ export class CashFlowService {
       .select('SUM(detail.debit_amount) - SUM(detail.credit_amount)', 'total')
       .where('account.name ILIKE :depPattern', { depPattern: '%depreciation%' })
       .orWhere('account.name ILIKE :amPattern', { amPattern: '%amortization%' })
-      .andWhere('account.category = :category', { category: AccountCategory.EXPENSE })
+      .andWhere('account.category = :category', {
+        category: AccountCategory.EXPENSE,
+      })
       .andWhere('voucher.voucher_date >= :periodStart', { periodStart })
       .andWhere('voucher.voucher_date <= :periodEnd', { periodEnd })
       .andWhere('voucher.is_posted = :isPosted', { isPosted: true })
@@ -595,13 +644,18 @@ export class CashFlowService {
   /**
    * Get total revenue for the period
    */
-  private async getRevenue(periodStart: Date, periodEnd: Date): Promise<number> {
+  private async getRevenue(
+    periodStart: Date,
+    periodEnd: Date,
+  ): Promise<number> {
     const result = await this.voucherDetailRepository
       .createQueryBuilder('detail')
       .leftJoin('detail.voucher', 'voucher')
       .leftJoin('accounts', 'account', 'account.code = detail.account_code')
       .select('SUM(detail.credit_amount) - SUM(detail.debit_amount)', 'total')
-      .where('account.category = :category', { category: AccountCategory.REVENUE })
+      .where('account.category = :category', {
+        category: AccountCategory.REVENUE,
+      })
       .andWhere('voucher.voucher_date >= :periodStart', { periodStart })
       .andWhere('voucher.voucher_date <= :periodEnd', { periodEnd })
       .andWhere('voucher.is_posted = :isPosted', { isPosted: true })

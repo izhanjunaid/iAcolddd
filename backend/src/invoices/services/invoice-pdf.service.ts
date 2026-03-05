@@ -35,7 +35,10 @@ export class InvoicePdfService {
 
         doc.end();
       } catch (error) {
-        this.logger.error(`Failed to generate PDF for invoice ${invoice.invoiceNumber}:`, error);
+        this.logger.error(
+          `Failed to generate PDF for invoice ${invoice.invoiceNumber}:`,
+          error,
+        );
         reject(error);
       }
     });
@@ -55,15 +58,21 @@ export class InvoicePdfService {
       .text('COLD STORAGE FACILITY', 50, 50, { align: 'center' })
       .fontSize(10)
       .font('Helvetica')
-      .text('Professional Cold Storage & Warehousing Services', { align: 'center' })
+      .text('Professional Cold Storage & Warehousing Services', {
+        align: 'center',
+      })
       .moveDown(0.3);
 
     // Company Details
     doc
       .fontSize(9)
       .text('Address: [Your Business Address]', { align: 'center' })
-      .text('NTN: [Your NTN Number] | STRN: [Your STRN Number]', { align: 'center' })
-      .text('Phone: [Contact Number] | Email: [Email Address]', { align: 'center' })
+      .text('NTN: [Your NTN Number] | STRN: [Your STRN Number]', {
+        align: 'center',
+      })
+      .text('Phone: [Contact Number] | Email: [Email Address]', {
+        align: 'center',
+      })
       .moveDown(1);
 
     // Horizontal line
@@ -79,7 +88,10 @@ export class InvoicePdfService {
   /**
    * Generate customer information section
    */
-  private generateCustomerInfo(doc: PDFKit.PDFDocument, invoice: Invoice): void {
+  private generateCustomerInfo(
+    doc: PDFKit.PDFDocument,
+    invoice: Invoice,
+  ): void {
     const topY = doc.y;
 
     // Invoice Title
@@ -124,25 +136,42 @@ export class InvoicePdfService {
 
     // Issue Date
     doc.font('Helvetica-Bold').text('Issue Date:', rightX, detailY);
-    doc.font('Helvetica').text(format(new Date(invoice.issueDate), 'dd-MMM-yyyy'), rightX + 100, detailY);
+    doc
+      .font('Helvetica')
+      .text(
+        format(new Date(invoice.issueDate), 'dd-MMM-yyyy'),
+        rightX + 100,
+        detailY,
+      );
     detailY += lineHeight;
 
     // Due Date
     doc.font('Helvetica-Bold').text('Due Date:', rightX, detailY);
-    doc.font('Helvetica').text(format(new Date(invoice.dueDate), 'dd-MMM-yyyy'), rightX + 100, detailY);
+    doc
+      .font('Helvetica')
+      .text(
+        format(new Date(invoice.dueDate), 'dd-MMM-yyyy'),
+        rightX + 100,
+        detailY,
+      );
     detailY += lineHeight;
 
     // Reference Number
     if (invoice.referenceNumber) {
       doc.font('Helvetica-Bold').text('Reference:', rightX, detailY);
-      doc.font('Helvetica').text(invoice.referenceNumber, rightX + 100, detailY);
+      doc
+        .font('Helvetica')
+        .text(invoice.referenceNumber, rightX + 100, detailY);
       detailY += lineHeight;
     }
 
     // Status
     doc.font('Helvetica-Bold').text('Status:', rightX, detailY);
     const statusColor = this.getStatusColor(invoice.status);
-    doc.fillColor(statusColor).font('Helvetica-Bold').text(invoice.status, rightX + 100, detailY);
+    doc
+      .fillColor(statusColor)
+      .font('Helvetica-Bold')
+      .text(invoice.status, rightX + 100, detailY);
     doc.fillColor('#000000');
 
     doc.moveDown(2);
@@ -151,7 +180,10 @@ export class InvoicePdfService {
   /**
    * Generate storage details section
    */
-  private generateInvoiceDetails(doc: PDFKit.PDFDocument, invoice: Invoice): void {
+  private generateInvoiceDetails(
+    doc: PDFKit.PDFDocument,
+    invoice: Invoice,
+  ): void {
     if (invoice.invoiceType === 'STORAGE' && invoice.weight) {
       doc
         .fontSize(11)
@@ -174,22 +206,38 @@ export class InvoicePdfService {
       doc.font('Helvetica').text(`${invoice.weight} kg`, col1X + 60, currentY);
 
       doc.font('Helvetica-Bold').text('Days Stored:', col2X, currentY);
-      doc.font('Helvetica').text(`${invoice.daysStored} days`, col2X + 70, currentY);
+      doc
+        .font('Helvetica')
+        .text(`${invoice.daysStored} days`, col2X + 70, currentY);
 
       doc.font('Helvetica-Bold').text('Rate:', col3X, currentY);
-      doc.font('Helvetica').text(`PKR ${invoice.ratePerKgPerDay}/kg/day`, col3X + 40, currentY);
+      doc
+        .font('Helvetica')
+        .text(`PKR ${invoice.ratePerKgPerDay}/kg/day`, col3X + 40, currentY);
 
       currentY += lineHeight;
 
       // Row 2 - Dates
       if (invoice.storageDateIn) {
         doc.font('Helvetica-Bold').text('Date In:', col1X, currentY);
-        doc.font('Helvetica').text(format(new Date(invoice.storageDateIn), 'dd-MMM-yyyy'), col1X + 60, currentY);
+        doc
+          .font('Helvetica')
+          .text(
+            format(new Date(invoice.storageDateIn), 'dd-MMM-yyyy'),
+            col1X + 60,
+            currentY,
+          );
       }
 
       if (invoice.storageDateOut) {
         doc.font('Helvetica-Bold').text('Date Out:', col2X, currentY);
-        doc.font('Helvetica').text(format(new Date(invoice.storageDateOut), 'dd-MMM-yyyy'), col2X + 70, currentY);
+        doc
+          .font('Helvetica')
+          .text(
+            format(new Date(invoice.storageDateOut), 'dd-MMM-yyyy'),
+            col2X + 70,
+            currentY,
+          );
       }
 
       doc.moveDown(2);
@@ -224,7 +272,8 @@ export class InvoicePdfService {
 
     // Line items
     let itemY = tableTop + 35;
-    const sortedItems = invoice.lineItems?.sort((a, b) => a.lineNumber - b.lineNumber) || [];
+    const sortedItems =
+      invoice.lineItems?.sort((a, b) => a.lineNumber - b.lineNumber) || [];
 
     sortedItems.forEach((item, index) => {
       if (itemY > doc.page.height - 200) {
@@ -241,9 +290,26 @@ export class InvoicePdfService {
 
       doc.text(item.lineNumber.toString(), 55, itemY, { width: 30 });
       doc.text(item.description, 90, itemY, { width: 240 });
-      doc.text(parseFloat(item.quantity.toString()).toFixed(2), 335, itemY, { width: 50, align: 'right' });
-      doc.text(parseFloat(item.unitPrice.toString()).toLocaleString('en-PK', { minimumFractionDigits: 2 }), 390, itemY, { width: 70, align: 'right' });
-      doc.text(parseFloat(item.lineTotal.toString()).toLocaleString('en-PK', { minimumFractionDigits: 2 }), 465, itemY, { width: 80, align: 'right' });
+      doc.text(parseFloat(item.quantity.toString()).toFixed(2), 335, itemY, {
+        width: 50,
+        align: 'right',
+      });
+      doc.text(
+        parseFloat(item.unitPrice.toString()).toLocaleString('en-PK', {
+          minimumFractionDigits: 2,
+        }),
+        390,
+        itemY,
+        { width: 70, align: 'right' },
+      );
+      doc.text(
+        parseFloat(item.lineTotal.toString()).toLocaleString('en-PK', {
+          minimumFractionDigits: 2,
+        }),
+        465,
+        itemY,
+        { width: 80, align: 'right' },
+      );
 
       itemY += 25;
     });
@@ -271,20 +337,37 @@ export class InvoicePdfService {
 
     // Subtotal
     doc.font('Helvetica').text('Subtotal:', rightX, totalY);
-    doc.text(`PKR ${invoice.subtotal.toLocaleString('en-PK', { minimumFractionDigits: 2 })}`, rightX + 100, totalY, { width: 100, align: 'right' });
+    doc.text(
+      `PKR ${invoice.subtotal.toLocaleString('en-PK', { minimumFractionDigits: 2 })}`,
+      rightX + 100,
+      totalY,
+      { width: 100, align: 'right' },
+    );
     totalY += 18;
 
     // GST
     if (invoice.gstAmount > 0) {
       doc.text(`GST @ ${invoice.gstRate}%:`, rightX, totalY);
-      doc.text(`PKR ${invoice.gstAmount.toLocaleString('en-PK', { minimumFractionDigits: 2 })}`, rightX + 100, totalY, { width: 100, align: 'right' });
+      doc.text(
+        `PKR ${invoice.gstAmount.toLocaleString('en-PK', { minimumFractionDigits: 2 })}`,
+        rightX + 100,
+        totalY,
+        { width: 100, align: 'right' },
+      );
       totalY += 18;
     }
 
     // WHT
     if (invoice.whtAmount > 0) {
       doc.text(`WHT @ ${invoice.whtRate}% (Deducted):`, rightX, totalY);
-      doc.fillColor('#dc2626').text(`(PKR ${invoice.whtAmount.toLocaleString('en-PK', { minimumFractionDigits: 2 })})`, rightX + 100, totalY, { width: 100, align: 'right' });
+      doc
+        .fillColor('#dc2626')
+        .text(
+          `(PKR ${invoice.whtAmount.toLocaleString('en-PK', { minimumFractionDigits: 2 })})`,
+          rightX + 100,
+          totalY,
+          { width: 100, align: 'right' },
+        );
       doc.fillColor('#000000');
       totalY += 18;
     }
@@ -304,7 +387,12 @@ export class InvoicePdfService {
       .font('Helvetica-Bold')
       .fillColor('#1e40af')
       .text('TOTAL AMOUNT:', rightX, totalY);
-    doc.text(`PKR ${invoice.totalAmount.toLocaleString('en-PK', { minimumFractionDigits: 2 })}`, rightX + 100, totalY, { width: 100, align: 'right' });
+    doc.text(
+      `PKR ${invoice.totalAmount.toLocaleString('en-PK', { minimumFractionDigits: 2 })}`,
+      rightX + 100,
+      totalY,
+      { width: 100, align: 'right' },
+    );
     doc.fillColor('#000000');
     totalY += 25;
 
@@ -312,13 +400,27 @@ export class InvoicePdfService {
     if (invoice.amountPaid > 0) {
       doc.fontSize(9).font('Helvetica');
       doc.text('Amount Paid:', rightX, totalY);
-      doc.fillColor('#059669').text(`PKR ${invoice.amountPaid.toLocaleString('en-PK', { minimumFractionDigits: 2 })}`, rightX + 100, totalY, { width: 100, align: 'right' });
+      doc
+        .fillColor('#059669')
+        .text(
+          `PKR ${invoice.amountPaid.toLocaleString('en-PK', { minimumFractionDigits: 2 })}`,
+          rightX + 100,
+          totalY,
+          { width: 100, align: 'right' },
+        );
       doc.fillColor('#000000');
       totalY += 18;
 
       // Balance Due
       doc.font('Helvetica-Bold').text('Balance Due:', rightX, totalY);
-      doc.fillColor('#dc2626').text(`PKR ${invoice.balanceDue.toLocaleString('en-PK', { minimumFractionDigits: 2 })}`, rightX + 100, totalY, { width: 100, align: 'right' });
+      doc
+        .fillColor('#dc2626')
+        .text(
+          `PKR ${invoice.balanceDue.toLocaleString('en-PK', { minimumFractionDigits: 2 })}`,
+          rightX + 100,
+          totalY,
+          { width: 100, align: 'right' },
+        );
       doc.fillColor('#000000');
       totalY += 20;
     }
@@ -353,7 +455,12 @@ export class InvoicePdfService {
       .font('Helvetica-Bold')
       .text('PAYMENT TERMS:', 50, footerY)
       .font('Helvetica')
-      .text(`Payment due within ${invoice.paymentTermsDays} days from issue date.`, 50, footerY + 15, { width: pageWidth - 100 })
+      .text(
+        `Payment due within ${invoice.paymentTermsDays} days from issue date.`,
+        50,
+        footerY + 15,
+        { width: pageWidth - 100 },
+      )
       .moveDown(0.5);
 
     // Bank Details
@@ -380,10 +487,19 @@ export class InvoicePdfService {
       .fontSize(8)
       .font('Helvetica')
       .fillColor('#64748b')
-      .text('This is a computer-generated invoice and does not require a signature.', 50, bottomY + 10, { align: 'center' })
-      .text('For any queries, please contact us at [Email/Phone]', { align: 'center' })
+      .text(
+        'This is a computer-generated invoice and does not require a signature.',
+        50,
+        bottomY + 10,
+        { align: 'center' },
+      )
+      .text('For any queries, please contact us at [Email/Phone]', {
+        align: 'center',
+      })
       .moveDown(0.5)
-      .text(`Generated on: ${format(new Date(), 'dd-MMM-yyyy HH:mm')}`, { align: 'center' });
+      .text(`Generated on: ${format(new Date(), 'dd-MMM-yyyy HH:mm')}`, {
+        align: 'center',
+      });
 
     doc.fillColor('#000000');
   }

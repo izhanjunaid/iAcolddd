@@ -19,9 +19,7 @@ import { CashFlowController } from './controllers/cash-flow.controller';
 import { FinancialAnalysisController } from './controllers/financial-analysis.controller';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Account, VoucherMaster, VoucherDetail]),
-  ],
+  imports: [TypeOrmModule.forFeature([Account, VoucherMaster, VoucherDetail])],
   controllers: [
     BalanceSheetController,
     IncomeStatementController,

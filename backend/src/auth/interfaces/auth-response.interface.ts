@@ -10,5 +10,3 @@ export interface AuthResponse {
     permissions: string[];
   };
 }
-
-

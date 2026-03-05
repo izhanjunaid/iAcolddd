@@ -1,10 +1,21 @@
-import { IsOptional, IsEnum, IsDateString, IsBoolean, IsString, IsInt, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsEnum,
+  IsDateString,
+  IsBoolean,
+  IsString,
+  IsInt,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { VoucherType } from '../../common/enums/voucher-type.enum';
 
 export class QueryVouchersDto {
-  @ApiPropertyOptional({ enum: VoucherType, description: 'Filter by voucher type' })
+  @ApiPropertyOptional({
+    enum: VoucherType,
+    description: 'Filter by voucher type',
+  })
   @IsEnum(VoucherType)
   @IsOptional()
   voucherType?: VoucherType;
@@ -25,7 +36,9 @@ export class QueryVouchersDto {
   @IsOptional()
   isPosted?: boolean;
 
-  @ApiPropertyOptional({ description: 'Search by voucher number or description' })
+  @ApiPropertyOptional({
+    description: 'Search by voucher number or description',
+  })
   @IsString()
   @IsOptional()
   search?: string;
@@ -49,9 +62,12 @@ export class QueryVouchersDto {
   @IsOptional()
   sortBy?: string = 'voucherDate';
 
-  @ApiPropertyOptional({ description: 'Sort order', enum: ['ASC', 'DESC'], default: 'DESC' })
+  @ApiPropertyOptional({
+    description: 'Sort order',
+    enum: ['ASC', 'DESC'],
+    default: 'DESC',
+  })
   @IsString()
   @IsOptional()
   sortOrder?: 'ASC' | 'DESC' = 'DESC';
 }
-

@@ -14,7 +14,8 @@ import type {
   StockMovementReportDto,
   StockMovementSummary,
   InventoryValuationReportDto,
-  InventoryValuationSummary,
+  InventoryValuationResponse,
+  InventoryValuationItem,
   InventoryCostLayer,
   Warehouse,
   Room
@@ -127,7 +128,7 @@ export const inventoryReportsApi = {
   },
 
   // Inventory valuation report
-  getInventoryValuationReport: async (params: InventoryValuationReportDto): Promise<InventoryValuationSummary[]> => {
+  getInventoryValuationReport: async (params: InventoryValuationReportDto): Promise<InventoryValuationItem[]> => {
     const response = await api.get('/inventory/reports/inventory-valuation', { params });
     return response.data;
   },
@@ -140,13 +141,13 @@ export const inventoryReportsApi = {
   },
 
   // Slow moving stock report
-  getSlowMovingStockReport: async (days: number = 90): Promise<InventoryValuationSummary[]> => {
+  getSlowMovingStockReport: async (days: number = 90): Promise<InventoryValuationItem[]> => {
     const response = await api.get('/inventory/reports/slow-moving', { params: { days } });
     return response.data;
   },
 
   // Stock below reorder level
-  getStockBelowReorderReport: async (): Promise<InventoryValuationSummary[]> => {
+  getStockBelowReorderReport: async (): Promise<InventoryValuationItem[]> => {
     const response = await api.get('/inventory/reports/reorder-level');
     return response.data;
   },
@@ -183,12 +184,30 @@ export const roomsApi = {
   },
 };
 
+// Inventory Valuation API
+export const inventoryValuationApi = {
+  // Get valuation summary
+  getValuationSummary: async (warehouseId?: string, itemId?: string): Promise<InventoryValuationResponse> => {
+    const params = { warehouseId, itemId };
+    const response = await api.get('/inventory/valuation', { params });
+    return response.data;
+  },
+
+  // Audit inventory
+  auditInventory: async (warehouseId?: string): Promise<any> => {
+    const params = { warehouseId };
+    const response = await api.get('/inventory/valuation/audit', { params });
+    return response.data;
+  }
+};
+
 // Combined inventory service object
 export const inventoryService = {
   items: inventoryItemsApi,
   transactions: inventoryTransactionsApi,
   balances: inventoryBalancesApi,
   reports: inventoryReportsApi,
+  valuation: inventoryValuationApi,
   warehouses: warehousesApi,
   rooms: roomsApi,
 };

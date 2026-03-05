@@ -13,15 +13,32 @@ import {
   HttpStatus,
   Res,
   StreamableFile,
+  BadRequestException,
+  ForbiddenException,
+  Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../auth/guards/permissions.guard';
 import { RequirePermissions } from '../../auth/decorators/permissions.decorator';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { InvoicesService, InvoicePdfService } from '../services';
-import { CreateInvoiceFromBillingDto, QueryInvoicesDto, UpdateInvoiceDto } from '../dto';
+import {
+  CreateInvoiceFromBillingDto,
+  QueryInvoicesDto,
+  UpdateInvoiceDto,
+} from '../dto';
+import { CreateCreditNoteDto } from '../dto/create-credit-note.dto';
+import { CreateDebitNoteDto } from '../dto/create-debit-note.dto';
+import { RecordPaymentDto } from '../dto/record-payment.dto';
+import { AddMiscChargeDto } from '../dto/add-misc-charge.dto';
 
 @ApiTags('Invoices')
 @ApiBearerAuth()
@@ -33,39 +50,38 @@ export class InvoicesController {
   constructor(
     private readonly invoicesService: InvoicesService,
     private readonly pdfService: InvoicePdfService,
-  ) {}
+  ) { }
 
   @Post('from-billing')
   @RequirePermissions('invoices.create')
   @ApiOperation({
-    summary: 'Create invoice from billing calculation',
-    description: 'Generates an invoice from a storage billing calculation with automatic invoice number generation',
+    summary: '[DEPRECATED] Create invoice from billing calculation',
+    description:
+      'This endpoint is disabled. Storage invoices are now generated automatically when an Outward Gate Pass is approved. Navigate to Cold Store → Outward Gate Passes to create invoices.',
+    deprecated: true,
   })
   @ApiResponse({
-    status: 201,
-    description: 'Invoice created successfully',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input data',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Customer not found',
+    status: 403,
+    description: 'Manual invoice creation is disabled',
   })
   async createFromBilling(
     @Body() dto: CreateInvoiceFromBillingDto,
     @CurrentUser() user: any,
   ) {
-    this.logger.log(`Creating invoice from billing for customer ${dto.customerId}`);
-    return this.invoicesService.createInvoiceFromBilling(dto, user?.username);
+    this.logger.warn(
+      `[DEPRECATED] User ${user?.username} attempted manual invoice creation for customer ${dto.customerId}. This endpoint is blocked.`,
+    );
+    throw new ForbiddenException(
+      'Manual invoice creation is disabled. Storage invoices are generated automatically when an Outward Gate Pass is approved. Please use Cold Store → Outward Gate Passes.',
+    );
   }
 
   @Get()
   @RequirePermissions('invoices.read')
   @ApiOperation({
     summary: 'Get all invoices with filters',
-    description: 'Retrieve invoices with optional filtering, sorting, and pagination',
+    description:
+      'Retrieve invoices with optional filtering, sorting, and pagination',
   })
   @ApiResponse({
     status: 200,
@@ -95,7 +111,8 @@ export class InvoicesController {
   @RequirePermissions('invoices.read')
   @ApiOperation({
     summary: 'Get invoice by ID',
-    description: 'Retrieve a single invoice with all details including line items',
+    description:
+      'Retrieve a single invoice with all details including line items',
   })
   @ApiParam({
     name: 'id',
@@ -119,7 +136,8 @@ export class InvoicesController {
   @RequirePermissions('invoices.read')
   @ApiOperation({
     summary: 'Get invoice by invoice number',
-    description: 'Retrieve invoice using the invoice number (e.g., INV-2025-0001)',
+    description:
+      'Retrieve invoice using the invoice number (e.g., INV-2025-0001)',
   })
   @ApiParam({
     name: 'invoiceNumber',
@@ -166,7 +184,10 @@ export class InvoicesController {
     status: 404,
     description: 'Invoice not found',
   })
-  async downloadPdf(@Param('id') id: string, @Res({ passthrough: true }) res: Response) {
+  async downloadPdf(
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     this.logger.log(`Generating PDF for invoice ${id}`);
 
     const invoice = await this.invoicesService.findOne(id);
@@ -225,14 +246,15 @@ export class InvoicesController {
   @HttpCode(HttpStatus.OK)
   async markAsSent(@Param('id') id: string, @CurrentUser() user: any) {
     this.logger.log(`Marking invoice ${id} as sent`);
-    return this.invoicesService.markAsSent(id, user?.username);
+    return this.invoicesService.markAsSent(id, user?.id);
   }
 
   @Post(':id/payment')
   @RequirePermissions('invoices.update')
   @ApiOperation({
     summary: 'Record payment for invoice',
-    description: 'Record a payment against an invoice, updating balance and status',
+    description:
+      'Record a payment against an invoice with GL Receipt Voucher creation',
   })
   @ApiParam({
     name: 'id',
@@ -240,7 +262,7 @@ export class InvoicesController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Payment recorded successfully',
+    description: 'Payment recorded and Receipt Voucher created',
   })
   @ApiResponse({
     status: 400,
@@ -248,11 +270,83 @@ export class InvoicesController {
   })
   async recordPayment(
     @Param('id') id: string,
-    @Body() body: { amount: number; paymentDate?: string },
+    @Body() recordPaymentDto: RecordPaymentDto,
+    @Request() req,
+  ) {
+    if (recordPaymentDto.invoiceId && recordPaymentDto.invoiceId !== id) {
+      throw new BadRequestException('Invoice ID in body does not match URL');
+    }
+
+    // Set Invoice ID from URL if missing
+    recordPaymentDto.invoiceId = id;
+
+    // Pass user ID (UUID)
+    return this.invoicesService.recordPayment(recordPaymentDto, req.user.id);
+  }
+
+  @Post(':id/credit-note')
+  @RequirePermissions('invoices.create')
+  @ApiOperation({
+    summary: 'Create Credit Note',
+    description:
+      'Create a Credit Note linked to this invoice, generating corresponding GL entries',
+  })
+  async createCreditNote(
+    @Param('id') id: string,
+    @Body() dto: CreateCreditNoteDto,
+    @Request() req,
+  ) {
+    if (dto.invoiceId && dto.invoiceId !== id) {
+      throw new BadRequestException('Invoice ID in body does not match URL');
+    }
+    dto.invoiceId = id;
+
+    return this.invoicesService.createCreditNote(dto, req.user.id);
+  }
+
+  @Post(':id/debit-note')
+  @RequirePermissions('invoices.create')
+  @ApiOperation({
+    summary: 'Create Debit Note',
+    description:
+      'Create a Debit Note linked to this invoice, generating corresponding GL entries',
+  })
+  async createDebitNote(
+    @Param('id') id: string,
+    @Body() dto: CreateDebitNoteDto,
+    @Request() req,
+  ) {
+    if (dto.invoiceId && dto.invoiceId !== id) {
+      throw new BadRequestException('Invoice ID in body does not match URL');
+    }
+    dto.invoiceId = id;
+
+    return this.invoicesService.createDebitNote(dto, req.user.id);
+  }
+
+  @Post(':id/add-charge')
+  @RequirePermissions('invoices.update')
+  @ApiOperation({
+    summary: 'Add miscellaneous charge to invoice',
+    description:
+      'Submit a miscellaneous charge (demurrage, penalty, etc.) for Maker-Checker approval. The charge is applied only after a second user approves it.',
+  })
+  @ApiParam({ name: 'id', description: 'Invoice UUID' })
+  @ApiResponse({ status: 201, description: 'Charge submitted for approval' })
+  @ApiResponse({ status: 400, description: 'Invalid invoice state or data' })
+  async addMiscCharge(
+    @Param('id') id: string,
+    @Body() dto: AddMiscChargeDto,
     @CurrentUser() user: any,
   ) {
-    this.logger.log(`Recording payment of PKR ${body.amount} for invoice ${id}`);
-    return this.invoicesService.recordPayment(id, body.amount, body.paymentDate, user?.username);
+    this.logger.log(
+      `User ${user?.username} requesting misc charge on invoice ${id}`,
+    );
+    return this.invoicesService.requestAddCharge(
+      id,
+      dto,
+      user?.id || user?.username,
+    );
   }
 
   @Patch(':id/cancel')

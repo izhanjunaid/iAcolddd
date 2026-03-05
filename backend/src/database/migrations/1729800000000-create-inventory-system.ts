@@ -6,28 +6,37 @@ export class CreateInventorySystem1729800000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Create enums
     await queryRunner.query(`
-      CREATE TYPE "inventory_transaction_type_enum" AS ENUM(
-        'RECEIPT', 'ISSUE', 'TRANSFER', 'ADJUSTMENT'
-      )
+      DO $$ BEGIN
+        CREATE TYPE "inventory_transaction_type_enum" AS ENUM(
+          'RECEIPT', 'ISSUE', 'TRANSFER', 'ADJUSTMENT'
+        );
+      EXCEPTION WHEN duplicate_object THEN null;
+      END $$;
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "inventory_reference_type_enum" AS ENUM(
-        'GRN', 'GDN', 'TRANSFER', 'ADJUSTMENT', 'PURCHASE_ORDER', 
-        'SALES_ORDER', 'PHYSICAL_COUNT', 'SYSTEM_ADJUSTMENT'
-      )
+      DO $$ BEGIN
+        CREATE TYPE "inventory_reference_type_enum" AS ENUM(
+          'GRN', 'GDN', 'TRANSFER', 'ADJUSTMENT', 'PURCHASE_ORDER', 
+          'SALES_ORDER', 'PHYSICAL_COUNT', 'SYSTEM_ADJUSTMENT'
+        );
+      EXCEPTION WHEN duplicate_object THEN null;
+      END $$;
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "unit_of_measure_enum" AS ENUM(
-        'KG', 'GRAM', 'TON', 'POUND', 'PALLET', 'CARTON', 'BAG', 'SACK',
-        'LITER', 'ML', 'GALLON', 'PIECE', 'DOZEN', 'CONTAINER', 'TRAY'
-      )
+      DO $$ BEGIN
+        CREATE TYPE "unit_of_measure_enum" AS ENUM(
+          'KG', 'GRAM', 'TON', 'POUND', 'PALLET', 'CARTON', 'BAG', 'SACK',
+          'LITER', 'ML', 'GALLON', 'PIECE', 'DOZEN', 'CONTAINER', 'TRAY'
+        );
+      EXCEPTION WHEN duplicate_object THEN null;
+      END $$;
     `);
 
     // Create warehouses table (basic structure for now)
     await queryRunner.query(`
-      CREATE TABLE "warehouses" (
+      CREATE TABLE IF NOT EXISTS "warehouses" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "code" VARCHAR(20) NOT NULL,
         "name" VARCHAR(200) NOT NULL,
@@ -41,7 +50,7 @@ export class CreateInventorySystem1729800000000 implements MigrationInterface {
 
     // Create rooms table (zones within warehouses)
     await queryRunner.query(`
-      CREATE TABLE "rooms" (
+      CREATE TABLE IF NOT EXISTS "rooms" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "warehouse_id" UUID NOT NULL,
         "code" VARCHAR(20) NOT NULL,
@@ -58,7 +67,7 @@ export class CreateInventorySystem1729800000000 implements MigrationInterface {
 
     // Create inventory_items table
     await queryRunner.query(`
-      CREATE TABLE "inventory_items" (
+      CREATE TABLE IF NOT EXISTS "inventory_items" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "sku" VARCHAR(50) NOT NULL,
         "name" VARCHAR(200) NOT NULL,
@@ -85,7 +94,7 @@ export class CreateInventorySystem1729800000000 implements MigrationInterface {
 
     // Create inventory_transactions table
     await queryRunner.query(`
-      CREATE TABLE "inventory_transactions" (
+      CREATE TABLE IF NOT EXISTS "inventory_transactions" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "transaction_number" VARCHAR(50) NOT NULL,
         "transaction_type" "inventory_transaction_type_enum" NOT NULL,
@@ -133,7 +142,7 @@ export class CreateInventorySystem1729800000000 implements MigrationInterface {
 
     // Create inventory_balances table
     await queryRunner.query(`
-      CREATE TABLE "inventory_balances" (
+      CREATE TABLE IF NOT EXISTS "inventory_balances" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "item_id" UUID NOT NULL,
         "customer_id" UUID,
@@ -159,7 +168,7 @@ export class CreateInventorySystem1729800000000 implements MigrationInterface {
 
     // Create inventory_cost_layers table
     await queryRunner.query(`
-      CREATE TABLE "inventory_cost_layers" (
+      CREATE TABLE IF NOT EXISTS "inventory_cost_layers" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "item_id" UUID NOT NULL,
         "customer_id" UUID,
@@ -185,42 +194,81 @@ export class CreateInventorySystem1729800000000 implements MigrationInterface {
     `);
 
     // Create indexes for performance
-    
+
     // Inventory items indexes
-    await queryRunner.query(`CREATE INDEX "idx_inventory_items_sku" ON "inventory_items" ("sku")`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_items_category" ON "inventory_items" ("category")`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_items_active" ON "inventory_items" ("is_active")`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_items_sku" ON "inventory_items" ("sku")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_items_category" ON "inventory_items" ("category")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_items_active" ON "inventory_items" ("is_active")`,
+    );
 
     // Inventory transactions indexes
-    await queryRunner.query(`CREATE INDEX "idx_inventory_transactions_item" ON "inventory_transactions" ("item_id")`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_transactions_customer" ON "inventory_transactions" ("customer_id")`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_transactions_warehouse" ON "inventory_transactions" ("warehouse_id")`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_transactions_date" ON "inventory_transactions" ("transaction_date")`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_transactions_type" ON "inventory_transactions" ("transaction_type")`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_transactions_reference" ON "inventory_transactions" ("reference_type", "reference_number")`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_transactions_item" ON "inventory_transactions" ("item_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_transactions_customer" ON "inventory_transactions" ("customer_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_transactions_warehouse" ON "inventory_transactions" ("warehouse_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_transactions_date" ON "inventory_transactions" ("transaction_date")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_transactions_type" ON "inventory_transactions" ("transaction_type")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_transactions_reference" ON "inventory_transactions" ("reference_type", "reference_number")`,
+    );
 
     // Inventory balances indexes
-    await queryRunner.query(`CREATE INDEX "idx_inventory_balances_item" ON "inventory_balances" ("item_id")`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_balances_customer" ON "inventory_balances" ("customer_id")`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_balances_warehouse" ON "inventory_balances" ("warehouse_id")`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_balances_quantity" ON "inventory_balances" ("quantity_on_hand") WHERE "quantity_on_hand" > 0`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_balances_item" ON "inventory_balances" ("item_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_balances_customer" ON "inventory_balances" ("customer_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_balances_warehouse" ON "inventory_balances" ("warehouse_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_balances_quantity" ON "inventory_balances" ("quantity_on_hand") WHERE "quantity_on_hand" > 0`,
+    );
 
     // Inventory cost layers indexes (critical for FIFO performance)
-    await queryRunner.query(`CREATE INDEX "idx_inventory_cost_layers_item" ON "inventory_cost_layers" ("item_id")`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_cost_layers_customer" ON "inventory_cost_layers" ("customer_id")`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_cost_layers_warehouse" ON "inventory_cost_layers" ("warehouse_id")`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_cost_layers_receipt_date" ON "inventory_cost_layers" ("receipt_date")`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_cost_layers_remaining" ON "inventory_cost_layers" ("remaining_quantity") WHERE "remaining_quantity" > 0`);
-    await queryRunner.query(`CREATE INDEX "idx_inventory_cost_layers_fifo" ON "inventory_cost_layers" ("item_id", "customer_id", "warehouse_id", "receipt_date")`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_cost_layers_item" ON "inventory_cost_layers" ("item_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_cost_layers_customer" ON "inventory_cost_layers" ("customer_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_cost_layers_warehouse" ON "inventory_cost_layers" ("warehouse_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_cost_layers_receipt_date" ON "inventory_cost_layers" ("receipt_date")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_cost_layers_remaining" ON "inventory_cost_layers" ("remaining_quantity") WHERE "remaining_quantity" > 0`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "idx_inventory_cost_layers_fifo" ON "inventory_cost_layers" ("item_id", "customer_id", "warehouse_id", "receipt_date")`,
+    );
 
     // Insert sample data
-    
+
     // Sample warehouses
     await queryRunner.query(`
       INSERT INTO "warehouses" ("code", "name", "address", "is_active") VALUES
       ('WH001', 'Main Cold Storage', '123 Cold Storage Lane, Karachi', TRUE),
       ('WH002', 'Secondary Cold Storage', '456 Freezer Street, Lahore', TRUE),
       ('WH003', 'Dry Storage Facility', '789 Ambient Ave, Islamabad', TRUE)
+      ON CONFLICT ("code") DO NOTHING
     `);
 
     // Sample rooms
@@ -241,6 +289,7 @@ export class CreateInventorySystem1729800000000 implements MigrationInterface {
         ('R005', 'Dry Storage A', '15°C to 25°C', 200.00)
       ) r(code, name, temperature_range, capacity_tons)
       WHERE w.code IN ('WH001', 'WH002')
+      ON CONFLICT ("warehouse_id", "code") DO NOTHING
     `);
 
     // Add sample inventory items for testing
@@ -263,46 +312,83 @@ export class CreateInventorySystem1729800000000 implements MigrationInterface {
         i.standard_cost,
         u.id
       FROM (VALUES
-        ('RICE001', 'Basmati Rice Premium', 'High quality basmati rice for export', 'Grains', 'BAG', FALSE, NULL, 15, 25, 25.00),
-        ('MEAT001', 'Beef Frozen Cuts', 'Premium frozen beef cuts', 'Meat', 'KG', TRUE, 180, -18, -15, 800.00),
-        ('DAIRY001', 'Milk Powder', 'Full cream milk powder', 'Dairy', 'KG', TRUE, 365, 2, 4, 150.00),
-        ('FRUIT001', 'Frozen Mangoes', 'IQF frozen mango chunks', 'Fruits', 'KG', TRUE, 720, -18, -15, 200.00),
-        ('VEG001', 'Frozen Vegetables Mix', 'Mixed frozen vegetables', 'Vegetables', 'KG', TRUE, 540, -18, -15, 120.00)
+        ('RICE001', 'Basmati Rice Premium', 'High quality basmati rice for export', 'Grains', 'BAG'::unit_of_measure_enum, FALSE, NULL, 15, 25, 25.00),
+        ('MEAT001', 'Beef Frozen Cuts', 'Premium frozen beef cuts', 'Meat', 'KG'::unit_of_measure_enum, TRUE, 180, -18, -15, 800.00),
+        ('DAIRY001', 'Milk Powder', 'Full cream milk powder', 'Dairy', 'KG'::unit_of_measure_enum, TRUE, 365, 2, 4, 150.00),
+        ('FRUIT001', 'Frozen Mangoes', 'IQF frozen mango chunks', 'Fruits', 'KG'::unit_of_measure_enum, TRUE, 720, -18, -15, 200.00),
+        ('VEG001', 'Frozen Vegetables Mix', 'Mixed frozen vegetables', 'Vegetables', 'KG'::unit_of_measure_enum, TRUE, 540, -18, -15, 120.00)
       ) i(sku, name, description, category, unit_of_measure, is_perishable, shelf_life_days, min_temperature, max_temperature, standard_cost)
       CROSS JOIN (
         SELECT id FROM "users" WHERE email = 'admin@example.com' LIMIT 1
       ) u
+      ON CONFLICT ("sku") DO NOTHING
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop indexes first
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_cost_layers_fifo"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_cost_layers_remaining"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_cost_layers_receipt_date"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_cost_layers_warehouse"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_cost_layers_customer"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_cost_layers_item"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_cost_layers_fifo"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_cost_layers_remaining"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_cost_layers_receipt_date"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_cost_layers_warehouse"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_cost_layers_customer"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_cost_layers_item"`,
+    );
 
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_balances_quantity"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_balances_warehouse"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_balances_customer"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_balances_item"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_balances_quantity"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_balances_warehouse"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_balances_customer"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_balances_item"`,
+    );
 
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_transactions_reference"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_transactions_type"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_transactions_date"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_transactions_warehouse"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_transactions_customer"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_transactions_item"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_transactions_reference"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_transactions_type"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_transactions_date"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_transactions_warehouse"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_transactions_customer"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_transactions_item"`,
+    );
 
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_items_active"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_items_category"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_items_active"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "idx_inventory_items_category"`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_inventory_items_sku"`);
 
     // Drop tables
     await queryRunner.query(`DROP TABLE IF EXISTS "inventory_cost_layers"`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "inventory_balances"`);  
+    await queryRunner.query(`DROP TABLE IF EXISTS "inventory_balances"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "inventory_transactions"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "inventory_items"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "rooms"`);
@@ -310,8 +396,11 @@ export class CreateInventorySystem1729800000000 implements MigrationInterface {
 
     // Drop enums
     await queryRunner.query(`DROP TYPE IF EXISTS "unit_of_measure_enum"`);
-    await queryRunner.query(`DROP TYPE IF EXISTS "inventory_reference_type_enum"`);
-    await queryRunner.query(`DROP TYPE IF EXISTS "inventory_transaction_type_enum"`);
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "inventory_reference_type_enum"`,
+    );
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "inventory_transaction_type_enum"`,
+    );
   }
 }
-

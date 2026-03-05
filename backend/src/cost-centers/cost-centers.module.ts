@@ -11,4 +11,3 @@ import { CostCenter } from './entities/cost-center.entity';
   exports: [CostCentersService],
 })
 export class CostCentersModule {}
-

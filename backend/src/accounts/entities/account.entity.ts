@@ -69,7 +69,12 @@ export class Account {
   })
   financialStatement: FinancialStatement | null;
 
-  @Column({ type: 'varchar', length: 100, nullable: true, name: 'statement_section' })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+    name: 'statement_section',
+  })
   statementSection: string | null;
 
   @Column({ type: 'integer', default: 0, name: 'display_order' })
@@ -107,23 +112,45 @@ export class Account {
   @Column({ type: 'boolean', default: true, name: 'allow_direct_posting' })
   allowDirectPosting: boolean;
 
-  @Column({ type: 'decimal', precision: 18, scale: 2, default: 0, name: 'opening_balance' })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 2,
+    default: 0,
+    name: 'opening_balance',
+  })
   openingBalance: number;
 
   @Column({ type: 'date', nullable: true, name: 'opening_date' })
   openingDate: Date | null;
 
-  @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true, name: 'credit_limit' })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 2,
+    nullable: true,
+    name: 'credit_limit',
+  })
   creditLimit: number | null;
 
   @Column({ type: 'integer', nullable: true, name: 'credit_days' })
   creditDays: number | null;
 
   // Contact details (for customer/supplier accounts)
-  @Column({ type: 'varchar', length: 200, nullable: true, name: 'address_line1' })
+  @Column({
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+    name: 'address_line1',
+  })
   addressLine1: string | null;
 
-  @Column({ type: 'varchar', length: 200, nullable: true, name: 'address_line2' })
+  @Column({
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+    name: 'address_line2',
+  })
   addressLine2: string | null;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
@@ -138,7 +165,12 @@ export class Account {
   @Column({ type: 'varchar', length: 20, nullable: true, name: 'postal_code' })
   postalCode: string | null;
 
-  @Column({ type: 'varchar', length: 200, nullable: true, name: 'contact_name' })
+  @Column({
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+    name: 'contact_name',
+  })
   contactName: string | null;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
@@ -191,4 +223,3 @@ export class Account {
   // Virtual property for current balance
   currentBalance?: number;
 }
-

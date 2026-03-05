@@ -1,5 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsBoolean, IsInt, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class QueryCostCentersDto {
@@ -8,7 +15,10 @@ export class QueryCostCentersDto {
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by active status', default: true })
+  @ApiPropertyOptional({
+    description: 'Filter by active status',
+    default: true,
+  })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
@@ -21,7 +31,12 @@ export class QueryCostCentersDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Items per page', minimum: 1, maximum: 100, default: 50 })
+  @ApiPropertyOptional({
+    description: 'Items per page',
+    minimum: 1,
+    maximum: 100,
+    default: 50,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -29,4 +44,3 @@ export class QueryCostCentersDto {
   @Max(100)
   limit?: number = 50;
 }
-

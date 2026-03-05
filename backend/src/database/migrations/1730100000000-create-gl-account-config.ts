@@ -6,7 +6,7 @@ export class CreateGlAccountConfig1730100000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Create gl_account_configuration table
     await queryRunner.query(`
-      CREATE TABLE "gl_account_configuration" (
+      CREATE TABLE IF NOT EXISTS "gl_account_configuration" (
         "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         "config_key" VARCHAR(50) UNIQUE NOT NULL,
         "config_name" VARCHAR(100) NOT NULL,
@@ -34,15 +34,15 @@ export class CreateGlAccountConfig1730100000000 implements MigrationInterface {
 
     // Create indexes
     await queryRunner.query(`
-      CREATE INDEX "idx_gl_config_key" ON "gl_account_configuration"("config_key");
+      CREATE INDEX IF NOT EXISTS "idx_gl_config_key" ON "gl_account_configuration"("config_key");
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "idx_gl_config_account" ON "gl_account_configuration"("account_id");
+      CREATE INDEX IF NOT EXISTS "idx_gl_config_account" ON "gl_account_configuration"("account_id");
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "idx_gl_config_active" ON "gl_account_configuration"("is_active");
+      CREATE INDEX IF NOT EXISTS "idx_gl_config_active" ON "gl_account_configuration"("is_active");
     `);
 
     // Add comment
@@ -70,7 +70,8 @@ export class CreateGlAccountConfig1730100000000 implements MigrationInterface {
       CROSS JOIN users u
       WHERE a.code = '1-0001-0001-0004'
       AND u.username = 'admin'
-      LIMIT 1;
+      LIMIT 1
+      ON CONFLICT ("config_key") DO NOTHING;
     `);
 
     await queryRunner.query(`
@@ -86,7 +87,8 @@ export class CreateGlAccountConfig1730100000000 implements MigrationInterface {
       CROSS JOIN users u
       WHERE a.code = '5-0001-0003-0001'
       AND u.username = 'admin'
-      LIMIT 1;
+      LIMIT 1
+      ON CONFLICT ("config_key") DO NOTHING;
     `);
 
     await queryRunner.query(`
@@ -102,7 +104,8 @@ export class CreateGlAccountConfig1730100000000 implements MigrationInterface {
       CROSS JOIN users u
       WHERE a.code = '2-0001-0001-0002'
       AND u.username = 'admin'
-      LIMIT 1;
+      LIMIT 1
+      ON CONFLICT ("config_key") DO NOTHING;
     `);
 
     await queryRunner.query(`
@@ -118,7 +121,8 @@ export class CreateGlAccountConfig1730100000000 implements MigrationInterface {
       CROSS JOIN users u
       WHERE a.code = '5-0001-0002-0002'
       AND u.username = 'admin'
-      LIMIT 1;
+      LIMIT 1
+      ON CONFLICT ("config_key") DO NOTHING;
     `);
 
     await queryRunner.query(`
@@ -134,7 +138,8 @@ export class CreateGlAccountConfig1730100000000 implements MigrationInterface {
       CROSS JOIN users u
       WHERE a.code = '4-0001-0002-0002'
       AND u.username = 'admin'
-      LIMIT 1;
+      LIMIT 1
+      ON CONFLICT ("config_key") DO NOTHING;
     `);
 
     await queryRunner.query(`
@@ -150,7 +155,8 @@ export class CreateGlAccountConfig1730100000000 implements MigrationInterface {
       CROSS JOIN users u
       WHERE a.code = '4-0001-0001-0001'
       AND u.username = 'admin'
-      LIMIT 1;
+      LIMIT 1
+      ON CONFLICT ("config_key") DO NOTHING;
     `);
 
     await queryRunner.query(`
@@ -166,12 +172,15 @@ export class CreateGlAccountConfig1730100000000 implements MigrationInterface {
       CROSS JOIN users u
       WHERE a.code = '1-0001-0001-0003'
       AND u.username = 'admin'
-      LIMIT 1;
+      LIMIT 1
+      ON CONFLICT ("config_key") DO NOTHING;
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop table (cascade will handle dependencies)
-    await queryRunner.query(`DROP TABLE IF EXISTS "gl_account_configuration" CASCADE;`);
+    await queryRunner.query(
+      `DROP TABLE IF EXISTS "gl_account_configuration" CASCADE;`,
+    );
   }
 }

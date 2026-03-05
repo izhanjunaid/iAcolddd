@@ -6,7 +6,7 @@ export class CreateFiscalPeriods1729700000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Create fiscal_years table
     await queryRunner.query(`
-      CREATE TABLE "fiscal_years" (
+      CREATE TABLE IF NOT EXISTS "fiscal_years" (
         "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         "year" INTEGER UNIQUE NOT NULL,
         "start_date" DATE NOT NULL,
@@ -25,12 +25,12 @@ export class CreateFiscalPeriods1729700000000 implements MigrationInterface {
 
     // Create index on year
     await queryRunner.query(`
-      CREATE INDEX "idx_fiscal_years_year" ON "fiscal_years"("year");
+      CREATE INDEX IF NOT EXISTS "idx_fiscal_years_year" ON "fiscal_years"("year");
     `);
 
     // Create fiscal_periods table
     await queryRunner.query(`
-      CREATE TABLE "fiscal_periods" (
+      CREATE TABLE IF NOT EXISTS "fiscal_periods" (
         "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         "fiscal_year_id" uuid NOT NULL,
         "period_number" INTEGER NOT NULL,
@@ -58,31 +58,34 @@ export class CreateFiscalPeriods1729700000000 implements MigrationInterface {
 
     // Create indexes on fiscal_periods
     await queryRunner.query(`
-      CREATE INDEX "idx_fiscal_periods_fiscal_year" 
+      CREATE INDEX IF NOT EXISTS "idx_fiscal_periods_fiscal_year" 
       ON "fiscal_periods"("fiscal_year_id");
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "idx_fiscal_periods_dates" 
+      CREATE INDEX IF NOT EXISTS "idx_fiscal_periods_dates" 
       ON "fiscal_periods"("start_date", "end_date");
     `);
 
     // Add fiscal_period_id to voucher_master
     await queryRunner.query(`
       ALTER TABLE "voucher_master" 
-      ADD COLUMN "fiscal_period_id" uuid;
+      ADD COLUMN IF NOT EXISTS "fiscal_period_id" uuid;
     `);
 
     await queryRunner.query(`
-      ALTER TABLE "voucher_master"
-      ADD CONSTRAINT "fk_voucher_fiscal_period"
-      FOREIGN KEY ("fiscal_period_id")
-      REFERENCES "fiscal_periods"("id")
-      ON DELETE RESTRICT;
+      DO $$ BEGIN
+        ALTER TABLE "voucher_master"
+        ADD CONSTRAINT "fk_voucher_fiscal_period"
+        FOREIGN KEY ("fiscal_period_id")
+        REFERENCES "fiscal_periods"("id")
+        ON DELETE RESTRICT;
+      EXCEPTION WHEN duplicate_object THEN null;
+      END $$;
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "idx_voucher_fiscal_period" 
+      CREATE INDEX IF NOT EXISTS "idx_voucher_fiscal_period" 
       ON "voucher_master"("fiscal_period_id");
     `);
 
@@ -119,4 +122,3 @@ export class CreateFiscalPeriods1729700000000 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE IF EXISTS "fiscal_years";`);
   }
 }
-

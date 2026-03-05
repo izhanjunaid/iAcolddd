@@ -10,7 +10,18 @@ import {
     Building2,
     Percent,
     FileSpreadsheet,
-    LogOut
+    LogOut,
+    Receipt,
+    TrendingUp,
+    CreditCard,
+    ShoppingCart,
+    ClipboardCheck,
+    Snowflake,
+    ArrowDownToLine,
+    ArrowUpFromLine,
+    DollarSign,
+    Landmark,
+    Wallet,
 } from 'lucide-react';
 
 export const Layout = () => {
@@ -49,19 +60,51 @@ export const Layout = () => {
                     <div className="flex-1 overflow-auto py-2">
                         <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
                             <NavLink to="/dashboard" icon={LayoutDashboard}>Dashboard</NavLink>
-                            <NavLink to="/customers" icon={Users}>Customers</NavLink>
+
+                            <div className="my-2 border-t" />
+                            <p className="px-4 pb-2 text-xs font-semibold text-muted-foreground">General</p>
                             <NavLink to="/accounts" icon={FileSpreadsheet}>Chart of Accounts</NavLink>
                             <NavLink to="/vouchers" icon={FileText}>Vouchers</NavLink>
+
+                            <div className="my-2 border-t" />
+                            <p className="px-4 pb-2 text-xs font-semibold text-muted-foreground">Sales (AR)</p>
+                            <NavLink to="/customers" icon={Users}>Customers</NavLink>
+                            <NavLink to="/invoices" icon={Receipt}>Invoices</NavLink>
+
+                            <div className="my-2 border-t" />
+                            <p className="px-4 pb-2 text-xs font-semibold text-muted-foreground">Purchases (AP)</p>
+                            <NavLink to="/payables/vendors" icon={Users}>Vendors</NavLink>
+                            <NavLink to="/payables/bills" icon={FileText}>Bills</NavLink>
+                            <NavLink to="/payables/payments" icon={CreditCard}>Payments</NavLink>
+
+                            <div className="my-2 border-t" />
+                            <p className="px-4 pb-2 text-xs font-semibold text-muted-foreground">Procurement</p>
+                            <NavLink to="/procurement/purchase-orders" icon={ShoppingCart}>Purchase Orders</NavLink>
+                            <NavLink to="/procurement/goods-receipts" icon={ClipboardCheck}>Goods Receipts</NavLink>
+
+                            <div className="my-2 border-t" />
+                            <p className="px-4 pb-2 text-xs font-semibold text-muted-foreground">Cold Store</p>
+                            <NavLink to="/cold-store/lots" icon={Snowflake}>Lots</NavLink>
+                            <NavLink to="/cold-store/inward-gate-passes" icon={ArrowDownToLine}>Inward GPs</NavLink>
+                            <NavLink to="/cold-store/outward-gate-passes" icon={ArrowUpFromLine}>Outward GPs</NavLink>
+                            <NavLink to="/cold-store/billing" icon={DollarSign}>Rental Billing</NavLink>
+                            <NavLink to="/cold-store/reports" icon={TrendingUp}>Analytics</NavLink>
+
                             <div className="my-2 border-t" />
                             <p className="px-4 pb-2 text-xs font-semibold text-muted-foreground">Inventory</p>
                             <NavLink to="/inventory/items" icon={Package}>Items</NavLink>
                             <NavLink to="/inventory/transactions" icon={FileText}>Transactions</NavLink>
                             <NavLink to="/inventory/balances" icon={FileSpreadsheet}>Balances</NavLink>
+                            <NavLink to="/inventory/valuation" icon={TrendingUp}>Valuation</NavLink>
                             <div className="my-2 border-t" />
                             <p className="px-4 pb-2 text-xs font-semibold text-muted-foreground">Settings</p>
                             <NavLink to="/fiscal-periods" icon={Calendar}>Fiscal Periods</NavLink>
                             <NavLink to="/cost-centers" icon={Building2}>Cost Centers</NavLink>
                             <NavLink to="/tax-rates" icon={Percent}>Tax Rates</NavLink>
+                            <div className="my-2 border-t" />
+                            <p className="px-4 pb-2 text-xs font-semibold text-muted-foreground">Accounting</p>
+                            <NavLink to="/fixed-assets" icon={Landmark}>Fixed Assets</NavLink>
+                            <NavLink to="/budgets" icon={Wallet}>Budgets</NavLink>
                             <div className="my-2 border-t" />
                             <p className="px-4 pb-2 text-xs font-semibold text-muted-foreground">Reports</p>
                             <NavLink to="/trial-balance" icon={FileSpreadsheet}>Trial Balance</NavLink>

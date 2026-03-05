@@ -40,7 +40,9 @@ export class QueryAccountsDto {
   @IsUUID('4')
   parentAccountId?: string;
 
-  @ApiPropertyOptional({ description: 'Include only root accounts (no parent)' })
+  @ApiPropertyOptional({
+    description: 'Include only root accounts (no parent)',
+  })
   @IsOptional()
   @Type(() => Boolean)
   @IsBoolean()
@@ -59,12 +61,17 @@ export class QueryAccountsDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Items per page', default: 20, minimum: 1, maximum: 100 })
+  @ApiPropertyOptional({
+    description: 'Items per page',
+    default: 20,
+    minimum: 1,
+    maximum: 100,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(1000)
   limit?: number = 20;
 
   @ApiPropertyOptional({ description: 'Sort by field', default: 'code' })
@@ -72,9 +79,12 @@ export class QueryAccountsDto {
   @IsString()
   sortBy?: string = 'code';
 
-  @ApiPropertyOptional({ description: 'Sort order', enum: ['ASC', 'DESC'], default: 'ASC' })
+  @ApiPropertyOptional({
+    description: 'Sort order',
+    enum: ['ASC', 'DESC'],
+    default: 'ASC',
+  })
   @IsOptional()
   @IsEnum(['ASC', 'DESC'])
   sortOrder?: 'ASC' | 'DESC' = 'ASC';
 }
-

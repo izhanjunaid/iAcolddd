@@ -92,7 +92,9 @@ const updateCustomerPermissions = async () => {
     });
 
     console.log('\n🎉 Customer permissions update completed successfully!\n');
-    console.log('⚠️  NOTE: Users need to log out and log back in for permissions to take effect.\n');
+    console.log(
+      '⚠️  NOTE: Users need to log out and log back in for permissions to take effect.\n',
+    );
 
     await dataSource.destroy();
     process.exit(0);

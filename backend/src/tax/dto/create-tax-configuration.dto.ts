@@ -1,4 +1,11 @@
-import { IsEnum, IsUUID, IsBoolean, IsOptional, IsString, IsDateString } from 'class-validator';
+import {
+  IsEnum,
+  IsUUID,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsDateString,
+} from 'class-validator';
 import { TaxEntityType } from '../../common/enums/tax-applicability.enum';
 
 export class CreateTaxConfigurationDto {

@@ -37,7 +37,10 @@ export class AccountsController {
   @ApiResponse({ status: 201, description: 'Account created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid data' })
   @ApiResponse({ status: 409, description: 'Account code already exists' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   create(@Body() createAccountDto: CreateAccountDto, @Request() req) {
     return this.accountsService.create(createAccountDto, req.user.id);
   }
@@ -46,7 +49,10 @@ export class AccountsController {
   @RequirePermissions('accounts.read')
   @ApiOperation({ summary: 'Get all accounts with pagination and filters' })
   @ApiResponse({ status: 200, description: 'Returns list of accounts' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   findAll(@Query() queryDto: QueryAccountsDto) {
     return this.accountsService.findAll(queryDto);
   }
@@ -55,16 +61,24 @@ export class AccountsController {
   @RequirePermissions('accounts.read')
   @ApiOperation({ summary: 'Get complete account hierarchy tree' })
   @ApiResponse({ status: 200, description: 'Returns account tree' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   getTree() {
     return this.accountsService.getAccountTree();
   }
 
   @Get('detail')
   @RequirePermissions('accounts.read')
-  @ApiOperation({ summary: 'Get all DETAIL type accounts (for transaction selection)' })
+  @ApiOperation({
+    summary: 'Get all DETAIL type accounts (for transaction selection)',
+  })
   @ApiResponse({ status: 200, description: 'Returns detail accounts' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   getDetailAccounts() {
     return this.accountsService.getDetailAccounts();
   }
@@ -74,7 +88,10 @@ export class AccountsController {
   @ApiOperation({ summary: 'Get account by ID' })
   @ApiResponse({ status: 200, description: 'Returns account' })
   @ApiResponse({ status: 404, description: 'Account not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   findOne(@Param('id') id: string) {
     return this.accountsService.findOne(id);
   }
@@ -84,7 +101,10 @@ export class AccountsController {
   @ApiOperation({ summary: 'Get sub-tree starting from specific account' })
   @ApiResponse({ status: 200, description: 'Returns account sub-tree' })
   @ApiResponse({ status: 404, description: 'Account not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   getSubTree(@Param('id') id: string) {
     return this.accountsService.getSubTree(id);
   }
@@ -95,7 +115,10 @@ export class AccountsController {
   @ApiResponse({ status: 200, description: 'Account updated successfully' })
   @ApiResponse({ status: 404, description: 'Account not found' })
   @ApiResponse({ status: 400, description: 'Invalid data or system account' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   update(
     @Param('id') id: string,
     @Body() updateAccountDto: UpdateAccountDto,
@@ -110,10 +133,15 @@ export class AccountsController {
   @ApiOperation({ summary: 'Delete account' })
   @ApiResponse({ status: 204, description: 'Account deleted successfully' })
   @ApiResponse({ status: 404, description: 'Account not found' })
-  @ApiResponse({ status: 400, description: 'Cannot delete: has children or is system account' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 400,
+    description: 'Cannot delete: has children or is system account',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   async remove(@Param('id') id: string) {
     await this.accountsService.remove(id);
   }
 }
-

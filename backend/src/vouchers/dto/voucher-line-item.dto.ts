@@ -1,4 +1,10 @@
-import { IsString, IsNumber, IsOptional, Min, ValidateIf } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class VoucherLineItemDto {
@@ -11,7 +17,7 @@ export class VoucherLineItemDto {
   @IsOptional()
   description?: string;
 
-  @ApiProperty({ description: 'Debit amount', example: 1000.00, default: 0 })
+  @ApiProperty({ description: 'Debit amount', example: 1000.0, default: 0 })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   debitAmount: number;
@@ -35,4 +41,3 @@ export class VoucherLineItemDto {
   @IsOptional()
   metadata?: Record<string, any>;
 }
-

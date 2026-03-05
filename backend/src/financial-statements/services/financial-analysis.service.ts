@@ -21,7 +21,9 @@ export class FinancialAnalysisService {
   async performFinancialAnalysis(
     dto: FinancialAnalysisRequestDto,
   ): Promise<FinancialAnalysis> {
-    this.logger.log(`Performing financial analysis for period ${dto.periodStart} to ${dto.periodEnd}`);
+    this.logger.log(
+      `Performing financial analysis for period ${dto.periodStart} to ${dto.periodEnd}`,
+    );
 
     // Generate all three financial statements
     const balanceSheet = await this.balanceSheetService.generateBalanceSheet({
@@ -31,15 +33,16 @@ export class FinancialAnalysisService {
       postedOnly: true,
     });
 
-    const incomeStatement = await this.incomeStatementService.generateIncomeStatement({
-      periodStart: dto.periodStart,
-      periodEnd: dto.periodEnd,
-      multiStep: true,
-      includeEbitda: true,
-      includeMargins: true,
-      sharesOutstanding: dto.sharesOutstanding,
-      postedOnly: true,
-    });
+    const incomeStatement =
+      await this.incomeStatementService.generateIncomeStatement({
+        periodStart: dto.periodStart,
+        periodEnd: dto.periodEnd,
+        multiStep: true,
+        includeEbitda: true,
+        includeMargins: true,
+        sharesOutstanding: dto.sharesOutstanding,
+        postedOnly: true,
+      });
 
     const cashFlow = await this.cashFlowService.generateCashFlowStatement({
       periodStart: dto.periodStart,
@@ -53,7 +56,8 @@ export class FinancialAnalysisService {
     const totalLiabilities = balanceSheet.liabilities.totalLiabilities;
     const totalEquity = balanceSheet.equity.totalEquity;
     const currentAssets = balanceSheet.assets.currentAssets.subtotal;
-    const currentLiabilities = balanceSheet.liabilities.currentLiabilities.subtotal;
+    const currentLiabilities =
+      balanceSheet.liabilities.currentLiabilities.subtotal;
     const inventory = this.getInventoryFromBalanceSheet(balanceSheet);
 
     const totalRevenue = incomeStatement.revenue.totalRevenue;
@@ -81,7 +85,8 @@ export class FinancialAnalysisService {
       totalRevenue: dto.annualRevenue || totalRevenue,
       totalAssets,
       inventory,
-      accountsReceivable: this.getAccountsReceivableFromBalanceSheet(balanceSheet),
+      accountsReceivable:
+        this.getAccountsReceivableFromBalanceSheet(balanceSheet),
       accountsPayable: this.getAccountsPayableFromBalanceSheet(balanceSheet),
     });
 
@@ -90,7 +95,8 @@ export class FinancialAnalysisService {
       totalLiabilities,
       totalEquity,
       operatingIncome,
-      interestExpense: this.getInterestExpenseFromIncomeStatement(incomeStatement),
+      interestExpense:
+        this.getInterestExpenseFromIncomeStatement(incomeStatement),
     });
 
     // Calculate trends if requested and we have previous period data
@@ -137,7 +143,8 @@ export class FinancialAnalysisService {
     inventory: number;
     cashAndEquivalents: number;
   }): FinancialAnalysis['liquidity'] {
-    const { currentAssets, currentLiabilities, inventory, cashAndEquivalents } = data;
+    const { currentAssets, currentLiabilities, inventory, cashAndEquivalents } =
+      data;
 
     // Current Ratio = Current Assets / Current Liabilities
     const currentRatio =
@@ -197,10 +204,12 @@ export class FinancialAnalysisService {
       totalRevenue > 0 ? (netIncome / totalRevenue) * 100 : 0;
 
     // Return on Assets (ROA) = (Net Income / Total Assets) * 100
-    const returnOnAssets = totalAssets > 0 ? (netIncome / totalAssets) * 100 : 0;
+    const returnOnAssets =
+      totalAssets > 0 ? (netIncome / totalAssets) * 100 : 0;
 
     // Return on Equity (ROE) = (Net Income / Total Equity) * 100
-    const returnOnEquity = totalEquity > 0 ? (netIncome / totalEquity) * 100 : 0;
+    const returnOnEquity =
+      totalEquity > 0 ? (netIncome / totalEquity) * 100 : 0;
 
     // Return on Investment (ROI) = (Net Income / (Total Assets - Current Liabilities)) * 100
     const returnOnInvestment = returnOnAssets; // Simplified
@@ -238,7 +247,8 @@ export class FinancialAnalysisService {
 
     // Inventory Turnover = Cost of Goods Sold / Average Inventory
     // Simplified: Revenue / Inventory (would need COGS for accuracy)
-    const inventoryTurnover = inventory > 0 ? totalRevenue / inventory : undefined;
+    const inventoryTurnover =
+      inventory > 0 ? totalRevenue / inventory : undefined;
 
     // Receivables Turnover = Revenue / Average Accounts Receivable
     const receivablesTurnover =
@@ -282,12 +292,10 @@ export class FinancialAnalysisService {
     } = data;
 
     // Debt to Assets Ratio = Total Liabilities / Total Assets
-    const debtToAssets =
-      totalAssets > 0 ? totalLiabilities / totalAssets : 0;
+    const debtToAssets = totalAssets > 0 ? totalLiabilities / totalAssets : 0;
 
     // Debt to Equity Ratio = Total Liabilities / Total Equity
-    const debtToEquity =
-      totalEquity > 0 ? totalLiabilities / totalEquity : 0;
+    const debtToEquity = totalEquity > 0 ? totalLiabilities / totalEquity : 0;
 
     // Equity Ratio = Total Equity / Total Assets
     const equityRatio = totalAssets > 0 ? totalEquity / totalAssets : 0;

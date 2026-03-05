@@ -23,10 +23,21 @@ export class Room {
   @Column({ type: 'varchar', length: 200 })
   name: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true, name: 'temperature_range' })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+    name: 'temperature_range',
+  })
   temperatureRange: string | null;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, name: 'capacity_tons' })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    name: 'capacity_tons',
+  })
   capacityTons: number | null;
 
   @Column({ type: 'boolean', default: true, name: 'is_active' })

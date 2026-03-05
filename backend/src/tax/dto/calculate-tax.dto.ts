@@ -1,4 +1,11 @@
-import { IsNumber, IsOptional, IsString, IsUUID, IsEnum, Min } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  IsEnum,
+  Min,
+} from 'class-validator';
 import { TaxType } from '../../common/enums/tax-type.enum';
 
 export class CalculateTaxDto {

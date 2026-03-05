@@ -3,7 +3,8 @@ import { IsInt, Min, IsDateString } from 'class-validator';
 
 export class CreateFiscalYearDto {
   @ApiProperty({
-    description: 'Fiscal year (e.g., 2025 represents FY 2025-2026: July 1, 2025 - June 30, 2026)',
+    description:
+      'Fiscal year (e.g., 2025 represents FY 2025-2026: July 1, 2025 - June 30, 2026)',
     example: 2025,
   })
   @IsInt()
@@ -24,4 +25,3 @@ export class CreateFiscalYearDto {
   @IsDateString()
   endDate: string;
 }
-

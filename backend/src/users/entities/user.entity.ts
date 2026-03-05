@@ -88,4 +88,3 @@ export class User {
     return this.status === UserStatus.ACTIVE && !this.isLocked;
   }
 }
-

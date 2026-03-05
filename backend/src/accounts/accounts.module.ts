@@ -11,5 +11,4 @@ import { MonthlyBalance } from './entities/monthly-balance.entity';
   providers: [AccountsService],
   exports: [AccountsService, TypeOrmModule],
 })
-export class AccountsModule { }
-
+export class AccountsModule {}

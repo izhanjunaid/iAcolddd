@@ -1,15 +1,15 @@
 export enum VoucherType {
-  JOURNAL = 'JOURNAL',           // JV - General Journal Entry
-  PAYMENT = 'PAYMENT',           // PV - Cash/Bank Payment
-  RECEIPT = 'RECEIPT',           // RV - Cash/Bank Receipt
-  CONTRA = 'CONTRA',             // CV - Cash to Bank or Bank to Cash
-  SALES = 'SALES',               // SI - Sales Invoice (future)
-  PURCHASE = 'PURCHASE',         // PI - Purchase Invoice (future)
-  DEBIT_NOTE = 'DEBIT_NOTE',     // DN - Debit Note (future)
-  CREDIT_NOTE = 'CREDIT_NOTE',   // CN - Credit Note (future)
+  JOURNAL = 'JOURNAL', // JV - General Journal Entry
+  PAYMENT = 'PAYMENT', // PV - Cash/Bank Payment
+  RECEIPT = 'RECEIPT', // RV - Cash/Bank Receipt
+  CONTRA = 'CONTRA', // CV - Cash to Bank or Bank to Cash
+  SALES = 'SALES', // SI - Sales Invoice (future)
+  PURCHASE = 'PURCHASE', // PI - Purchase Invoice (future)
+  DEBIT_NOTE = 'DEBIT_NOTE', // DN - Debit Note (future)
+  CREDIT_NOTE = 'CREDIT_NOTE', // CN - Credit Note (future)
   SYSTEM_GENERATED = 'SYSTEM_GENERATED', // SG - System generated entries
-  MEMO = 'MEMO',                 // MM - Memo entries (no financial impact)
-  REVERSING = 'REVERSING',       // RV - Reversing entries
+  MEMO = 'MEMO', // MM - Memo entries (no financial impact)
+  REVERSING = 'REVERSING', // RV - Reversing entries
 }
 
 // Helper to get voucher prefix for number generation
@@ -29,4 +29,3 @@ export function getVoucherPrefix(type: VoucherType): string {
   };
   return prefixMap[type];
 }
-

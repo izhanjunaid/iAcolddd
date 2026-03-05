@@ -1,15 +1,29 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsEnum, IsBoolean, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsBoolean,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 import { UnitOfMeasure } from '../../common/enums/unit-of-measure.enum';
 
 export class QueryInventoryItemsDto {
-  @ApiPropertyOptional({ example: 'RICE', description: 'Search by SKU (partial match)' })
+  @ApiPropertyOptional({
+    example: 'RICE',
+    description: 'Search by SKU (partial match)',
+  })
   @IsOptional()
   @IsString()
   sku?: string;
 
-  @ApiPropertyOptional({ example: 'Basmati', description: 'Search by name (partial match)' })
+  @ApiPropertyOptional({
+    example: 'Basmati',
+    description: 'Search by name (partial match)',
+  })
   @IsOptional()
   @IsString()
   name?: string;
@@ -19,12 +33,18 @@ export class QueryInventoryItemsDto {
   @IsString()
   category?: string;
 
-  @ApiPropertyOptional({ enum: UnitOfMeasure, description: 'Filter by unit of measure' })
+  @ApiPropertyOptional({
+    enum: UnitOfMeasure,
+    description: 'Filter by unit of measure',
+  })
   @IsOptional()
   @IsEnum(UnitOfMeasure)
   unitOfMeasure?: UnitOfMeasure;
 
-  @ApiPropertyOptional({ example: true, description: 'Filter by perishable status' })
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Filter by perishable status',
+  })
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => {
@@ -34,7 +54,10 @@ export class QueryInventoryItemsDto {
   })
   isPerishable?: boolean;
 
-  @ApiPropertyOptional({ example: true, description: 'Filter by active status' })
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Filter by active status',
+  })
   @IsOptional()
   @IsBoolean()
   @Transform(({ value }) => {
@@ -44,7 +67,11 @@ export class QueryInventoryItemsDto {
   })
   isActive?: boolean;
 
-  @ApiPropertyOptional({ example: 10, description: 'Number of items per page', default: 50 })
+  @ApiPropertyOptional({
+    example: 10,
+    description: 'Number of items per page',
+    default: 50,
+  })
   @IsOptional()
   @IsNumber()
   @Min(1)
@@ -52,21 +79,33 @@ export class QueryInventoryItemsDto {
   @Transform(({ value }) => parseInt(value))
   limit?: number = 50;
 
-  @ApiPropertyOptional({ example: 0, description: 'Number of items to skip', default: 0 })
+  @ApiPropertyOptional({
+    example: 0,
+    description: 'Number of items to skip',
+    default: 0,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
   @Transform(({ value }) => parseInt(value))
   offset?: number = 0;
 
-  @ApiPropertyOptional({ example: 'name', description: 'Sort by field', default: 'name' })
+  @ApiPropertyOptional({
+    example: 'name',
+    description: 'Sort by field',
+    default: 'name',
+  })
   @IsOptional()
   @IsString()
   sortBy?: string = 'name';
 
-  @ApiPropertyOptional({ example: 'ASC', description: 'Sort order', enum: ['ASC', 'DESC'], default: 'ASC' })
+  @ApiPropertyOptional({
+    example: 'ASC',
+    description: 'Sort order',
+    enum: ['ASC', 'DESC'],
+    default: 'ASC',
+  })
   @IsOptional()
   @IsString()
   sortOrder?: 'ASC' | 'DESC' = 'ASC';
 }
-

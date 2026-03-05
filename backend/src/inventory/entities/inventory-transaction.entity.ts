@@ -11,7 +11,9 @@ import { User } from '../../users/entities/user.entity';
 import { Customer } from '../../customers/entities/customer.entity';
 import { FiscalPeriod } from '../../fiscal-periods/entities/fiscal-period.entity';
 import { VoucherMaster } from '../../vouchers/entities/voucher-master.entity';
+import { Account } from '../../accounts/entities/account.entity';
 import { InventoryItem } from './inventory-item.entity';
+import { ColdStoreLot } from '../../cold-store/entities/cold-store-lot.entity';
 import { InventoryTransactionType } from '../../common/enums/inventory-transaction-type.enum';
 import { InventoryReferenceType } from '../../common/enums/inventory-reference-type.enum';
 import { UnitOfMeasure } from '../../common/enums/unit-of-measure.enum';
@@ -28,7 +30,12 @@ export class InventoryTransaction {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 50, unique: true, name: 'transaction_number' })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    unique: true,
+    name: 'transaction_number',
+  })
   transactionNumber: string;
 
   // Transaction details
@@ -53,7 +60,12 @@ export class InventoryTransaction {
   @Column({ type: 'uuid', nullable: true, name: 'reference_id' })
   referenceId: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true, name: 'reference_number' })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+    name: 'reference_number',
+  })
   referenceNumber: string;
 
   // Item and location
@@ -71,7 +83,7 @@ export class InventoryTransaction {
   @JoinColumn({ name: 'customer_id' })
   customer: Customer;
 
-  @Column({ type: 'uuid', name: 'warehouse_id' })
+  @Column({ type: 'uuid', nullable: true, name: 'warehouse_id' })
   warehouseId: string;
 
   // Note: Warehouse entity will be created later when we implement warehouse management
@@ -114,6 +126,13 @@ export class InventoryTransaction {
   @Column({ type: 'varchar', length: 50, nullable: true, name: 'lot_number' })
   lotNumber: string;
 
+  @Column({ type: 'uuid', nullable: true, name: 'lot_id' })
+  lotId: string;
+
+  @ManyToOne(() => ColdStoreLot)
+  @JoinColumn({ name: 'lot_id' })
+  lot: ColdStoreLot;
+
   @Column({ type: 'varchar', length: 50, nullable: true, name: 'batch_number' })
   batchNumber: string;
 
@@ -133,6 +152,14 @@ export class InventoryTransaction {
   @ManyToOne(() => VoucherMaster)
   @JoinColumn({ name: 'gl_voucher_id' })
   glVoucher: VoucherMaster;
+
+  // Expense Account for Internal Consumption
+  @Column({ type: 'uuid', nullable: true, name: 'expense_account_id' })
+  expenseAccountId: string;
+
+  @ManyToOne(() => Account)
+  @JoinColumn({ name: 'expense_account_id' })
+  expenseAccount: Account;
 
   // Audit fields
   @Column({ type: 'uuid', nullable: true, name: 'fiscal_period_id' })
@@ -155,4 +182,3 @@ export class InventoryTransaction {
   @Column({ type: 'text', nullable: true })
   notes: string;
 }
-

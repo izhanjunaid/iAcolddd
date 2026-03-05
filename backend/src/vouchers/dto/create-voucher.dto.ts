@@ -1,10 +1,10 @@
-import { 
-  IsString, 
-  IsEnum, 
-  IsDate, 
-  IsOptional, 
-  IsArray, 
-  ValidateNested, 
+import {
+  IsString,
+  IsEnum,
+  IsDate,
+  IsOptional,
+  IsArray,
+  ValidateNested,
   ArrayMinSize,
   IsDateString,
 } from 'class-validator';
@@ -15,15 +15,15 @@ import { PaymentMode } from '../../common/enums/payment-mode.enum';
 import { VoucherLineItemDto } from './voucher-line-item.dto';
 
 export class CreateVoucherDto {
-  @ApiProperty({ 
-    enum: VoucherType, 
+  @ApiProperty({
+    enum: VoucherType,
     description: 'Voucher type',
     example: VoucherType.JOURNAL,
   })
   @IsEnum(VoucherType)
   voucherType: VoucherType;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Voucher date',
     example: '2025-10-21',
   })
@@ -36,7 +36,10 @@ export class CreateVoucherDto {
   description?: string;
 
   // Payment/Receipt specific fields
-  @ApiPropertyOptional({ enum: PaymentMode, description: 'Payment mode (for Payment/Receipt vouchers)' })
+  @ApiPropertyOptional({
+    enum: PaymentMode,
+    description: 'Payment mode (for Payment/Receipt vouchers)',
+  })
   @IsEnum(PaymentMode)
   @IsOptional()
   paymentMode?: PaymentMode;
@@ -62,7 +65,10 @@ export class CreateVoucherDto {
   @IsOptional()
   referenceId?: string;
 
-  @ApiPropertyOptional({ description: 'Reference document type', example: 'GRN' })
+  @ApiPropertyOptional({
+    description: 'Reference document type',
+    example: 'GRN',
+  })
   @IsString()
   @IsOptional()
   referenceType?: string;
@@ -73,14 +79,15 @@ export class CreateVoucherDto {
   referenceNumber?: string;
 
   // Line items
-  @ApiProperty({ 
-    type: [VoucherLineItemDto], 
+  @ApiProperty({
+    type: [VoucherLineItemDto],
     description: 'Voucher line items (debit and credit entries)',
   })
   @IsArray()
-  @ArrayMinSize(2, { message: 'At least 2 line items required (one debit and one credit)' })
+  @ArrayMinSize(2, {
+    message: 'At least 2 line items required (one debit and one credit)',
+  })
   @ValidateNested({ each: true })
   @Type(() => VoucherLineItemDto)
   details: VoucherLineItemDto[];
 }
-

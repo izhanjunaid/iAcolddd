@@ -38,7 +38,10 @@ export class CustomersController {
   })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   async create(@Body() createCustomerDto: CreateCustomerDto, @Request() req) {
     return await this.customersService.create(createCustomerDto, req.user.id);
   }
@@ -48,7 +51,10 @@ export class CustomersController {
   @ApiOperation({ summary: 'Get all customers with pagination' })
   @ApiResponse({ status: 200, description: 'Customers retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   async findAll(@Query() query: QueryCustomersDto) {
     return await this.customersService.findAll(query);
   }
@@ -58,7 +64,10 @@ export class CustomersController {
   @ApiOperation({ summary: 'Get a customer by ID' })
   @ApiResponse({ status: 200, description: 'Customer retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Customer not found' })
   async findOne(@Param('id') id: string) {
     return await this.customersService.findOne(id);
@@ -70,14 +79,21 @@ export class CustomersController {
   @ApiResponse({ status: 200, description: 'Customer updated successfully' })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Customer not found' })
   async update(
     @Param('id') id: string,
     @Body() updateCustomerDto: UpdateCustomerDto,
     @Request() req,
   ) {
-    return await this.customersService.update(id, updateCustomerDto, req.user.id);
+    return await this.customersService.update(
+      id,
+      updateCustomerDto,
+      req.user.id,
+    );
   }
 
   @Delete(':id')
@@ -88,7 +104,10 @@ export class CustomersController {
     description: 'Customer deleted successfully (soft delete)',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Customer not found' })
   @ApiResponse({
     status: 409,
@@ -104,10 +123,12 @@ export class CustomersController {
   @ApiOperation({ summary: 'Get customer account balance' })
   @ApiResponse({ status: 200, description: 'Balance retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Customer not found' })
   async getBalance(@Param('id') id: string) {
     return await this.customersService.getBalance(id);
   }
 }
-

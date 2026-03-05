@@ -4,4 +4,3 @@ export enum FinancialStatement {
   CASH_FLOW_STATEMENT = 'CASH_FLOW_STATEMENT',
   CHANGES_IN_EQUITY = 'CHANGES_IN_EQUITY',
 }
-

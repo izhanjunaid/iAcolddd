@@ -9,7 +9,10 @@ export class QueryFiscalPeriodsDto {
   @Min(2020)
   year?: number;
 
-  @ApiPropertyOptional({ description: 'Filter by closed status', example: false })
+  @ApiPropertyOptional({
+    description: 'Filter by closed status',
+    example: false,
+  })
   @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
@@ -22,11 +25,15 @@ export class QueryFiscalPeriodsDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Items per page', minimum: 1, maximum: 100, default: 20 })
+  @ApiPropertyOptional({
+    description: 'Items per page',
+    minimum: 1,
+    maximum: 100,
+    default: 20,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   limit?: number = 20;
 }
-

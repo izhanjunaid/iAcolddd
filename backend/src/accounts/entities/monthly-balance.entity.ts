@@ -20,7 +20,7 @@ export class MonthlyBalance {
   @Column({ name: 'account_id', type: 'uuid' })
   accountId: string;
 
-  @ManyToOne(() => Account, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Account, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'account_id' })
   account: Account;
 
@@ -37,16 +37,40 @@ export class MonthlyBalance {
   @Column({ type: 'integer' })
   month: number; // 1-12
 
-  @Column({ type: 'decimal', precision: 18, scale: 2, default: 0, name: 'opening_balance' })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 2,
+    default: 0,
+    name: 'opening_balance',
+  })
   openingBalance: number;
 
-  @Column({ type: 'decimal', precision: 18, scale: 2, default: 0, name: 'total_debits' })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 2,
+    default: 0,
+    name: 'total_debits',
+  })
   totalDebits: number;
 
-  @Column({ type: 'decimal', precision: 18, scale: 2, default: 0, name: 'total_credits' })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 2,
+    default: 0,
+    name: 'total_credits',
+  })
   totalCredits: number;
 
-  @Column({ type: 'decimal', precision: 18, scale: 2, default: 0, name: 'closing_balance' })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 2,
+    default: 0,
+    name: 'closing_balance',
+  })
   closingBalance: number;
 
   @Column({ type: 'boolean', default: false, name: 'is_final' })

@@ -161,7 +161,9 @@ const seed = async () => {
     console.log('   Username: admin');
     console.log('   Password: Admin@123');
     console.log('   Email: admin@advance-erp.com\n');
-    console.log('⚠️  IMPORTANT: Change the admin password after first login!\n');
+    console.log(
+      '⚠️  IMPORTANT: Change the admin password after first login!\n',
+    );
 
     await dataSource.destroy();
     process.exit(0);
@@ -173,4 +175,3 @@ const seed = async () => {
 };
 
 seed();
-

@@ -1,6 +1,5 @@
 import { DataSource } from 'typeorm';
 import { config as dotenvConfig } from 'dotenv';
-import { CreateInvoicesSystem1730000000000 } from './migrations/1730000000000-create-invoices-system';
 
 // Load environment variables
 dotenvConfig();
@@ -17,31 +16,33 @@ const runMigrations = async () => {
 
   try {
     console.log('📦 Connecting to database...');
+    // Add migrations path
+    dataSource.setOptions({
+      migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
+      subscribers: [],
+    });
+
     await dataSource.initialize();
     console.log('✅ Database connection established');
 
-    console.log('🚀 Running invoice system migration...');
+    console.log('🚀 Running pending migrations...');
 
-    const migration = new CreateInvoicesSystem1730000000000();
-    await migration.up(dataSource.createQueryRunner());
+    const migrations = await dataSource.runMigrations();
 
-    console.log('✅ Invoice system migration completed successfully!');
-    console.log('');
-    console.log('Created tables:');
-    console.log('  - invoices');
-    console.log('  - invoice_line_items');
-    console.log('');
-    console.log('Created enums:');
-    console.log('  - invoice_status_enum');
-    console.log('  - invoice_type_enum');
+    console.log(`✅ ${migrations.length} migrations executed successfully!`);
+    if (migrations.length > 0) {
+      migrations.forEach((m) => console.log(`   - ${m.name}`));
+    }
 
     await dataSource.destroy();
   } catch (error) {
     console.error('❌ Migration failed:', error.message);
     if (error.message.includes('already exists')) {
-      console.log('ℹ️  Tables might already exist. Skipping migration.');
+      console.log(
+        'ℹ️  Error indicates resource already exists. Please verify manually.',
+      );
     } else {
-      throw error;
+      console.error(error);
     }
     await dataSource.destroy();
     process.exit(1);

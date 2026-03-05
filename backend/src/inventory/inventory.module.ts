@@ -8,26 +8,28 @@ import {
   InventoryBalance,
   InventoryCostLayer,
   Warehouse,
-  Room
+  Room,
 } from './entities';
 import { GlAccountConfiguration } from '../common/entities/gl-account-configuration.entity';
 
 // Services
-import { 
+import { InventoryValuationController } from './controllers/inventory-valuation.controller';
+import { InventoryValuationService } from './services/inventory-valuation.service';
+import {
   InventoryItemsService,
   InventoryTransactionsService,
   FIFOCostingService,
   InventoryGLService,
-  WarehousesService
+  WarehousesService,
 } from './services';
 
 // Controllers
-import { 
+import {
   InventoryItemsController,
   InventoryTransactionsController,
   InventoryBalancesController,
   InventoryReportsController,
-  WarehousesController
+  WarehousesController,
 } from './controllers';
 
 // External modules
@@ -48,30 +50,32 @@ import { FiscalPeriodsModule } from '../fiscal-periods/fiscal-periods.module';
       Room,
       GlAccountConfiguration,
     ]),
-    
+
     // External modules for dependencies
     VouchersModule,
     AccountsModule,
     CustomersModule,
     FiscalPeriodsModule,
   ],
-  
+
   providers: [
     InventoryItemsService,
     InventoryTransactionsService,
     FIFOCostingService,
     InventoryGLService,
     WarehousesService,
+    InventoryValuationService,
   ],
-  
+
   controllers: [
     InventoryItemsController,
     InventoryTransactionsController,
     InventoryBalancesController,
     InventoryReportsController,
     WarehousesController,
+    InventoryValuationController,
   ],
-  
+
   exports: [
     InventoryItemsService,
     InventoryTransactionsService,
@@ -81,4 +85,3 @@ import { FiscalPeriodsModule } from '../fiscal-periods/fiscal-periods.module';
   ],
 })
 export class InventoryModule {}
-

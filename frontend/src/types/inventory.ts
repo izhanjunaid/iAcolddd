@@ -3,7 +3,7 @@
 // Enums
 export enum InventoryTransactionType {
   RECEIPT = 'RECEIPT',
-  ISSUE = 'ISSUE', 
+  ISSUE = 'ISSUE',
   TRANSFER = 'TRANSFER',
   ADJUSTMENT = 'ADJUSTMENT',
 }
@@ -28,7 +28,7 @@ export enum UnitOfMeasure {
 
 export enum InventoryReferenceType {
   GRN = 'GRN',
-  GDN = 'GDN', 
+  GDN = 'GDN',
   TRANSFER = 'TRANSFER',
   ADJUSTMENT = 'ADJUSTMENT',
   PURCHASE_ORDER = 'PURCHASE_ORDER',
@@ -270,15 +270,21 @@ export interface StockMovementSummary {
   averageCost: number;
 }
 
-export interface InventoryValuationSummary {
+export interface InventoryValuationItem {
   itemId: string;
   itemName: string;
-  itemSku: string;
+  sku: string;
   category?: string;
+  unitOfMeasure?: string;
+  warehouseId: string;
   warehouseName: string;
-  quantityOnHand: number;
-  unitOfMeasure: UnitOfMeasure;
+  quantity: number;
   averageCost: number;
   totalValue: number;
-  lastMovementDate?: string;
+}
+
+export interface InventoryValuationResponse {
+  totalInventoryValue: number;
+  itemCount: number;
+  details: InventoryValuationItem[];
 }

@@ -7,9 +7,12 @@ import {
   JoinColumn,
   Index,
   Unique,
+  VersionColumn,
 } from 'typeorm';
 import { Customer } from '../../customers/entities/customer.entity';
 import { InventoryItem } from './inventory-item.entity';
+import { Warehouse } from './warehouse.entity';
+import { ColdStoreLot } from '../../cold-store/entities/cold-store-lot.entity';
 import { InventoryTransactionType } from '../../common/enums/inventory-transaction-type.enum';
 
 @Entity('inventory_balances')
@@ -40,8 +43,9 @@ export class InventoryBalance {
   @Column({ type: 'uuid', name: 'warehouse_id' })
   warehouseId: string;
 
-  // Note: Warehouse entity will be created later when we implement warehouse management
-  // For now, we'll store the warehouse_id as a string
+  @ManyToOne(() => Warehouse)
+  @JoinColumn({ name: 'warehouse_id' })
+  warehouse: Warehouse;
 
   @Column({ type: 'uuid', nullable: true, name: 'room_id' })
   roomId: string;
@@ -52,50 +56,57 @@ export class InventoryBalance {
   @Column({ type: 'varchar', length: 50, nullable: true, name: 'lot_number' })
   lotNumber: string;
 
+  @Column({ type: 'uuid', nullable: true, name: 'lot_id' })
+  lotId: string;
+
+  @ManyToOne(() => ColdStoreLot)
+  @JoinColumn({ name: 'lot_id' })
+  lot: ColdStoreLot;
+
   // Quantities
-  @Column({ 
-    type: 'decimal', 
-    precision: 18, 
-    scale: 3, 
-    default: 0, 
-    name: 'quantity_on_hand' 
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 3,
+    default: 0,
+    name: 'quantity_on_hand',
   })
   quantityOnHand: number;
 
-  @Column({ 
-    type: 'decimal', 
-    precision: 18, 
-    scale: 3, 
-    default: 0, 
-    name: 'quantity_reserved' 
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 3,
+    default: 0,
+    name: 'quantity_reserved',
   })
   quantityReserved: number;
 
-  @Column({ 
-    type: 'decimal', 
-    precision: 18, 
-    scale: 3, 
-    default: 0, 
-    name: 'quantity_available' 
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 3,
+    default: 0,
+    name: 'quantity_available',
   })
   quantityAvailable: number;
 
   // Costing
-  @Column({ 
-    type: 'decimal', 
-    precision: 18, 
-    scale: 4, 
-    default: 0, 
-    name: 'weighted_average_cost' 
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 4,
+    default: 0,
+    name: 'weighted_average_cost',
   })
   weightedAverageCost: number;
 
-  @Column({ 
-    type: 'decimal', 
-    precision: 18, 
-    scale: 2, 
-    default: 0, 
-    name: 'total_value' 
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 2,
+    default: 0,
+    name: 'total_value',
   })
   totalValue: number;
 
@@ -112,7 +123,9 @@ export class InventoryBalance {
   lastMovementType: InventoryTransactionType;
 
   // Audit
+  @VersionColumn({ name: 'version' })
+  version: number;
+
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }
-

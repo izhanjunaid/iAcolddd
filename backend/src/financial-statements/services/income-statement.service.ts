@@ -27,7 +27,9 @@ export class IncomeStatementService {
    * Generate Income Statement (Profit & Loss Statement)
    * Multi-step format with detailed breakdowns
    */
-  async generateIncomeStatement(dto: IncomeStatementRequestDto): Promise<IncomeStatement> {
+  async generateIncomeStatement(
+    dto: IncomeStatementRequestDto,
+  ): Promise<IncomeStatement> {
     this.logger.log(
       `Generating Income Statement from ${dto.periodStart} to ${dto.periodEnd}`,
     );
@@ -45,7 +47,10 @@ export class IncomeStatementService {
     const revenue = await this.buildRevenueSection(accounts, dto);
 
     // Build Cost of Goods Sold section
-    const costOfGoodsSold = await this.buildCostOfGoodsSoldSection(accounts, dto);
+    const costOfGoodsSold = await this.buildCostOfGoodsSoldSection(
+      accounts,
+      dto,
+    );
 
     // Calculate Gross Profit
     const grossProfit: {
@@ -56,35 +61,46 @@ export class IncomeStatementService {
     } = {
       amount: revenue.totalRevenue - costOfGoodsSold.total,
       previousAmount: dto.includeComparison
-        ? (revenue.previousTotalRevenue || 0) - (costOfGoodsSold.previousTotal || 0)
+        ? (revenue.previousTotalRevenue || 0) -
+          (costOfGoodsSold.previousTotal || 0)
         : undefined,
-      margin: revenue.totalRevenue > 0
-        ? ((revenue.totalRevenue - costOfGoodsSold.total) / revenue.totalRevenue) * 100
-        : 0,
+      margin:
+        revenue.totalRevenue > 0
+          ? ((revenue.totalRevenue - costOfGoodsSold.total) /
+              revenue.totalRevenue) *
+            100
+          : 0,
     };
 
     if (dto.includeComparison && revenue.previousTotalRevenue) {
       grossProfit.previousMargin =
         revenue.previousTotalRevenue > 0
-          ? ((revenue.previousTotalRevenue - (costOfGoodsSold.previousTotal || 0)) /
+          ? ((revenue.previousTotalRevenue -
+              (costOfGoodsSold.previousTotal || 0)) /
               revenue.previousTotalRevenue) *
             100
           : 0;
     }
 
     // Build Operating Expenses section
-    const operatingExpenses = await this.buildOperatingExpensesSection(accounts, dto);
+    const operatingExpenses = await this.buildOperatingExpensesSection(
+      accounts,
+      dto,
+    );
 
     // Calculate Operating Income (EBIT - Earnings Before Interest & Tax)
     const operatingIncome = {
       amount: grossProfit.amount - operatingExpenses.totalOperating,
       previousAmount: dto.includeComparison
-        ? (grossProfit.previousAmount || 0) - (operatingExpenses.previousTotalOperating || 0)
+        ? (grossProfit.previousAmount || 0) -
+          (operatingExpenses.previousTotalOperating || 0)
         : undefined,
-      margin: revenue.totalRevenue > 0
-        ? ((grossProfit.amount - operatingExpenses.totalOperating) / revenue.totalRevenue) *
-          100
-        : 0,
+      margin:
+        revenue.totalRevenue > 0
+          ? ((grossProfit.amount - operatingExpenses.totalOperating) /
+              revenue.totalRevenue) *
+            100
+          : 0,
     };
 
     // Build Other Expenses section (Financial expenses, etc.)
@@ -97,18 +113,26 @@ export class IncomeStatementService {
     };
 
     if (dto.includeEbitda !== false) {
-      const depreciation = await this.getDepreciationExpense(dto.periodStart, dto.periodEnd);
-      const amortization = await this.getAmortizationExpense(dto.periodStart, dto.periodEnd);
+      const depreciation = await this.getDepreciationExpense(
+        dto.periodStart,
+        dto.periodEnd,
+      );
+      const amortization = await this.getAmortizationExpense(
+        dto.periodStart,
+        dto.periodEnd,
+      );
 
       ebitda = {
         amount: operatingIncome.amount + depreciation + amortization,
         previousAmount: dto.includeComparison
-          ? (operatingIncome.previousAmount || 0)
+          ? operatingIncome.previousAmount || 0
           : undefined,
-        margin: revenue.totalRevenue > 0
-          ? ((operatingIncome.amount + depreciation + amortization) / revenue.totalRevenue) *
-            100
-          : 0,
+        margin:
+          revenue.totalRevenue > 0
+            ? ((operatingIncome.amount + depreciation + amortization) /
+                revenue.totalRevenue) *
+              100
+            : 0,
       };
     }
 
@@ -131,7 +155,10 @@ export class IncomeStatementService {
     const netIncome = {
       amount: netIncomeAmount,
       previousAmount: dto.includeComparison ? 0 : undefined,
-      margin: revenue.totalRevenue > 0 ? (netIncomeAmount / revenue.totalRevenue) * 100 : 0,
+      margin:
+        revenue.totalRevenue > 0
+          ? (netIncomeAmount / revenue.totalRevenue) * 100
+          : 0,
       previousMargin: undefined,
       earningsPerShare: dto.sharesOutstanding
         ? netIncomeAmount / dto.sharesOutstanding
@@ -139,23 +166,26 @@ export class IncomeStatementService {
     };
 
     // Calculate performance metrics
-    const metrics = dto.includeMargins !== false
-      ? {
-          grossProfitMargin: grossProfit.margin,
-          operatingMargin: operatingIncome.margin,
-          netProfitMargin: netIncome.margin,
-          returnOnSales: netIncome.margin,
-          expenseRatio: revenue.totalRevenue > 0
-            ? (operatingExpenses.totalOperating / revenue.totalRevenue) * 100
-            : 0,
-        }
-      : {
-          grossProfitMargin: 0,
-          operatingMargin: 0,
-          netProfitMargin: 0,
-          returnOnSales: 0,
-          expenseRatio: 0,
-        };
+    const metrics =
+      dto.includeMargins !== false
+        ? {
+            grossProfitMargin: grossProfit.margin,
+            operatingMargin: operatingIncome.margin,
+            netProfitMargin: netIncome.margin,
+            returnOnSales: netIncome.margin,
+            expenseRatio:
+              revenue.totalRevenue > 0
+                ? (operatingExpenses.totalOperating / revenue.totalRevenue) *
+                  100
+                : 0,
+          }
+        : {
+            grossProfitMargin: 0,
+            operatingMargin: 0,
+            netProfitMargin: 0,
+            returnOnSales: 0,
+            expenseRatio: 0,
+          };
 
     const incomeStatement: IncomeStatement = {
       title: 'Income Statement',
@@ -189,7 +219,12 @@ export class IncomeStatementService {
     periodStart: Date,
     periodEnd: Date,
     postedOnly: boolean,
-  ): Promise<Map<string, { account: Account; debit: number; credit: number; net: number }>> {
+  ): Promise<
+    Map<
+      string,
+      { account: Account; debit: number; credit: number; net: number }
+    >
+  > {
     // Get all revenue and expense accounts
     const accounts = await this.accountRepository.find({
       where: [
@@ -234,7 +269,9 @@ export class IncomeStatementService {
       .leftJoin('detail.voucher', 'voucher')
       .select('SUM(detail.debit_amount)', 'totalDebits')
       .addSelect('SUM(detail.credit_amount)', 'totalCredits')
-      .where('detail.account_code = :accountCode', { accountCode: account.code })
+      .where('detail.account_code = :accountCode', {
+        accountCode: account.code,
+      })
       .andWhere('voucher.voucher_date >= :periodStart', { periodStart })
       .andWhere('voucher.voucher_date <= :periodEnd', { periodEnd })
       .andWhere('voucher.deleted_at IS NULL');
@@ -251,7 +288,9 @@ export class IncomeStatementService {
     // For revenue (credit nature): net = credit - debit
     // For expenses (debit nature): net = debit - credit
     const net =
-      account.category === AccountCategory.REVENUE ? credit - debit : debit - credit;
+      account.category === AccountCategory.REVENUE
+        ? credit - debit
+        : debit - credit;
 
     return { debit, credit, net };
   }
@@ -269,19 +308,22 @@ export class IncomeStatementService {
 
     // Operating Revenue
     const operatingRevenueAccounts = revenueAccounts.filter(
-      (item) => item.account.subCategory === AccountSubCategory.OPERATING_REVENUE,
+      (item) =>
+        item.account.subCategory === AccountSubCategory.OPERATING_REVENUE,
     );
 
-    const operatingItems: StatementLineItem[] = operatingRevenueAccounts.map((item) => ({
-      code: item.account.code,
-      label: item.account.name,
-      amount: item.net,
-      level: 1,
-      isTotal: false,
-      isBold: false,
-      isCalculated: false,
-      accountCodes: [item.account.code],
-    }));
+    const operatingItems: StatementLineItem[] = operatingRevenueAccounts.map(
+      (item) => ({
+        code: item.account.code,
+        label: item.account.name,
+        amount: item.net,
+        level: 1,
+        isTotal: false,
+        isBold: false,
+        isCalculated: false,
+        accountCodes: [item.account.code],
+      }),
+    );
 
     const operatingTotal = operatingRevenueAccounts.reduce(
       (sum, item) => sum + item.net,
@@ -306,7 +348,10 @@ export class IncomeStatementService {
       accountCodes: [item.account.code],
     }));
 
-    const otherTotal = otherIncomeAccounts.reduce((sum, item) => sum + item.net, 0);
+    const otherTotal = otherIncomeAccounts.reduce(
+      (sum, item) => sum + item.net,
+      0,
+    );
 
     return {
       operatingRevenue: {
@@ -375,7 +420,8 @@ export class IncomeStatementService {
 
     // Administrative Expenses
     const adminAccounts = expenseAccounts.filter(
-      (item) => item.account.subCategory === AccountSubCategory.ADMINISTRATIVE_EXPENSE,
+      (item) =>
+        item.account.subCategory === AccountSubCategory.ADMINISTRATIVE_EXPENSE,
     );
 
     const adminItems: StatementLineItem[] = adminAccounts.map((item) => ({
@@ -398,36 +444,46 @@ export class IncomeStatementService {
         item.account.subCategory === null,
     );
 
-    const operatingItems: StatementLineItem[] = operatingAccounts.map((item) => ({
-      code: item.account.code,
-      label: item.account.name,
-      amount: item.net,
-      level: 1,
-      isTotal: false,
-      isBold: false,
-      isCalculated: false,
-      accountCodes: [item.account.code],
-    }));
+    const operatingItems: StatementLineItem[] = operatingAccounts.map(
+      (item) => ({
+        code: item.account.code,
+        label: item.account.name,
+        amount: item.net,
+        level: 1,
+        isTotal: false,
+        isBold: false,
+        isCalculated: false,
+        accountCodes: [item.account.code],
+      }),
+    );
 
-    const operatingTotal = operatingAccounts.reduce((sum, item) => sum + item.net, 0);
+    const operatingTotal = operatingAccounts.reduce(
+      (sum, item) => sum + item.net,
+      0,
+    );
 
     // General Expenses (Other operating expenses)
     const otherOperatingAccounts = expenseAccounts.filter(
       (item) => item.account.subCategory === AccountSubCategory.OTHER_EXPENSE,
     );
 
-    const generalItems: StatementLineItem[] = otherOperatingAccounts.map((item) => ({
-      code: item.account.code,
-      label: item.account.name,
-      amount: item.net,
-      level: 1,
-      isTotal: false,
-      isBold: false,
-      isCalculated: false,
-      accountCodes: [item.account.code],
-    }));
+    const generalItems: StatementLineItem[] = otherOperatingAccounts.map(
+      (item) => ({
+        code: item.account.code,
+        label: item.account.name,
+        amount: item.net,
+        level: 1,
+        isTotal: false,
+        isBold: false,
+        isCalculated: false,
+        accountCodes: [item.account.code],
+      }),
+    );
 
-    const generalTotal = otherOperatingAccounts.reduce((sum, item) => sum + item.net, 0);
+    const generalTotal = otherOperatingAccounts.reduce(
+      (sum, item) => sum + item.net,
+      0,
+    );
 
     return {
       administrative: {
@@ -468,18 +524,23 @@ export class IncomeStatementService {
         item.account.subCategory === AccountSubCategory.FINANCIAL_EXPENSE,
     );
 
-    const financialItems: StatementLineItem[] = financialExpenses.map((item) => ({
-      code: item.account.code,
-      label: item.account.name,
-      amount: item.net,
-      level: 1,
-      isTotal: false,
-      isBold: false,
-      isCalculated: false,
-      accountCodes: [item.account.code],
-    }));
+    const financialItems: StatementLineItem[] = financialExpenses.map(
+      (item) => ({
+        code: item.account.code,
+        label: item.account.name,
+        amount: item.net,
+        level: 1,
+        isTotal: false,
+        isBold: false,
+        isCalculated: false,
+        accountCodes: [item.account.code],
+      }),
+    );
 
-    const financialTotal = financialExpenses.reduce((sum, item) => sum + item.net, 0);
+    const financialTotal = financialExpenses.reduce(
+      (sum, item) => sum + item.net,
+      0,
+    );
 
     return {
       financial: {
@@ -514,7 +575,9 @@ export class IncomeStatementService {
       .leftJoin('accounts', 'account', 'account.code = detail.account_code')
       .select('SUM(detail.debit_amount) - SUM(detail.credit_amount)', 'total')
       .where('account.name ILIKE :pattern', { pattern: '%depreciation%' })
-      .andWhere('account.category = :category', { category: AccountCategory.EXPENSE })
+      .andWhere('account.category = :category', {
+        category: AccountCategory.EXPENSE,
+      })
       .andWhere('voucher.voucher_date >= :periodStart', { periodStart })
       .andWhere('voucher.voucher_date <= :periodEnd', { periodEnd })
       .andWhere('voucher.is_posted = :isPosted', { isPosted: true })
@@ -538,7 +601,9 @@ export class IncomeStatementService {
       .leftJoin('accounts', 'account', 'account.code = detail.account_code')
       .select('SUM(detail.debit_amount) - SUM(detail.credit_amount)', 'total')
       .where('account.name ILIKE :pattern', { pattern: '%amortization%' })
-      .andWhere('account.category = :category', { category: AccountCategory.EXPENSE })
+      .andWhere('account.category = :category', {
+        category: AccountCategory.EXPENSE,
+      })
       .andWhere('voucher.voucher_date >= :periodStart', { periodStart })
       .andWhere('voucher.voucher_date <= :periodEnd', { periodEnd })
       .andWhere('voucher.is_posted = :isPosted', { isPosted: true })

@@ -5,7 +5,13 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual, MoreThanOrEqual, IsNull, Or } from 'typeorm';
+import {
+  Repository,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  IsNull,
+  Or,
+} from 'typeorm';
 import { TaxRate, TaxConfiguration } from './entities';
 import {
   CreateTaxRateDto,
@@ -17,7 +23,10 @@ import {
   InvoiceTaxCalculationResult,
 } from './dto';
 import { TaxType } from '../common/enums/tax-type.enum';
-import { TaxApplicability, TaxEntityType } from '../common/enums/tax-applicability.enum';
+import {
+  TaxApplicability,
+  TaxEntityType,
+} from '../common/enums/tax-applicability.enum';
 
 @Injectable()
 export class TaxService {
@@ -32,7 +41,10 @@ export class TaxService {
   // TAX RATE MANAGEMENT
   // ==========================================
 
-  async createTaxRate(createDto: CreateTaxRateDto, userId: string): Promise<TaxRate> {
+  async createTaxRate(
+    createDto: CreateTaxRateDto,
+    userId: string,
+  ): Promise<TaxRate> {
     // Check if default rate already exists for this tax type
     if (createDto.isDefault) {
       const existingDefault = await this.taxRateRepository.findOne({
@@ -45,14 +57,19 @@ export class TaxService {
       if (existingDefault) {
         throw new ConflictException(
           `A default rate already exists for ${createDto.taxType}. ` +
-          `Please unset the existing default first.`
+            `Please unset the existing default first.`,
         );
       }
     }
 
     // Validate dates
-    if (createDto.effectiveTo && new Date(createDto.effectiveTo) < new Date(createDto.effectiveFrom)) {
-      throw new BadRequestException('Effective to date must be after effective from date');
+    if (
+      createDto.effectiveTo &&
+      new Date(createDto.effectiveTo) < new Date(createDto.effectiveFrom)
+    ) {
+      throw new BadRequestException(
+        'Effective to date must be after effective from date',
+      );
     }
 
     const taxRate = this.taxRateRepository.create({
@@ -71,7 +88,14 @@ export class TaxService {
     limit: number;
     totalPages: number;
   }> {
-    const { page = 1, limit = 20, taxType, applicability, isActive, search } = query;
+    const {
+      page = 1,
+      limit = 20,
+      taxType,
+      applicability,
+      isActive,
+      search,
+    } = query;
 
     const queryBuilder = this.taxRateRepository
       .createQueryBuilder('tr')
@@ -84,7 +108,9 @@ export class TaxService {
     }
 
     if (applicability) {
-      queryBuilder.andWhere('tr.applicability = :applicability', { applicability });
+      queryBuilder.andWhere('tr.applicability = :applicability', {
+        applicability,
+      });
     }
 
     if (isActive !== undefined) {
@@ -94,7 +120,7 @@ export class TaxService {
     if (search) {
       queryBuilder.andWhere(
         '(tr.name ILIKE :search OR tr.description ILIKE :search)',
-        { search: `%${search}%` }
+        { search: `%${search}%` },
       );
     }
 
@@ -129,7 +155,11 @@ export class TaxService {
     return taxRate;
   }
 
-  async updateTaxRate(id: string, updateDto: UpdateTaxRateDto, userId: string): Promise<TaxRate> {
+  async updateTaxRate(
+    id: string,
+    updateDto: UpdateTaxRateDto,
+    userId: string,
+  ): Promise<TaxRate> {
     const taxRate = await this.findOneTaxRate(id);
 
     // Check default constraint if changing to default
@@ -144,7 +174,7 @@ export class TaxService {
       if (existingDefault && existingDefault.id !== id) {
         throw new ConflictException(
           `Another default rate exists for ${taxRate.taxType}. ` +
-          `Please unset it first.`
+            `Please unset it first.`,
         );
       }
     }
@@ -163,7 +193,7 @@ export class TaxService {
 
     if (configCount > 0) {
       throw new BadRequestException(
-        `Cannot delete tax rate. It is used in ${configCount} configuration(s).`
+        `Cannot delete tax rate. It is used in ${configCount} configuration(s).`,
       );
     }
 
@@ -184,7 +214,7 @@ export class TaxService {
     const exemptionStatus = await this.checkTaxExemption(
       taxType,
       customerId,
-      productId
+      productId,
     );
 
     if (exemptionStatus.isExempt) {
@@ -203,12 +233,12 @@ export class TaxService {
       taxType,
       customerId,
       productId,
-      transactionType
+      transactionType,
     );
 
     if (!taxRate) {
       throw new NotFoundException(
-        `No applicable tax rate found for ${taxType}`
+        `No applicable tax rate found for ${taxType}`,
       );
     }
 
@@ -232,13 +262,15 @@ export class TaxService {
   /**
    * Calculate all taxes for an invoice
    */
-  async calculateInvoiceTaxes(dto: CalculateInvoiceTaxDto): Promise<InvoiceTaxCalculationResult> {
+  async calculateInvoiceTaxes(
+    dto: CalculateInvoiceTaxDto,
+  ): Promise<InvoiceTaxCalculationResult> {
     const { subtotal, customerId, items = [] } = dto;
 
     const taxBreakdown: TaxCalculationResult[] = [];
     let gstAmount = 0;
     let whtAmount = 0;
-    let incomeTaxAmount = 0;
+    const incomeTaxAmount = 0;
 
     // Calculate GST
     const gstResult = await this.calculateTax({
@@ -284,7 +316,7 @@ export class TaxService {
     taxType: TaxType,
     customerId?: string,
     productId?: string,
-    transactionType?: string
+    transactionType?: string,
   ): Promise<TaxRate | null> {
     const today = new Date();
 
@@ -338,7 +370,7 @@ export class TaxService {
   private async checkTaxExemption(
     taxType: TaxType,
     customerId?: string,
-    productId?: string
+    productId?: string,
   ): Promise<{ isExempt: boolean; reason?: string }> {
     const today = new Date();
 
@@ -397,17 +429,22 @@ export class TaxService {
   // TAX CONFIGURATION MANAGEMENT
   // ==========================================
 
-  async createTaxConfiguration(dto: any, userId: string): Promise<TaxConfiguration> {
+  async createTaxConfiguration(
+    dto: any,
+    userId: string,
+  ): Promise<TaxConfiguration> {
     // Validate tax rate exists
     const taxRate = await this.findOneTaxRate(dto.taxRateId);
 
     const config = this.taxConfigRepository.create(dto);
-    return await this.taxConfigRepository.save(config) as any as TaxConfiguration;
+    return (await this.taxConfigRepository.save(
+      config,
+    )) as any as TaxConfiguration;
   }
 
   async findTaxConfigurationsForEntity(
     entityType: TaxEntityType,
-    entityId: string
+    entityId: string,
   ): Promise<TaxConfiguration[]> {
     return await this.taxConfigRepository.find({
       where: { entityType, entityId },

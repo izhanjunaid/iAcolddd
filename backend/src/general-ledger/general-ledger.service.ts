@@ -58,7 +58,7 @@ export class GeneralLedgerService {
     private readonly accountRepository: Repository<Account>,
     @InjectRepository(MonthlyBalance)
     private readonly monthlyBalanceRepository: Repository<MonthlyBalance>,
-  ) { }
+  ) {}
 
   /**
    * Get current balance for an account
@@ -90,7 +90,7 @@ export class GeneralLedgerService {
         accountId: account.id,
         year: lastMonthDate.getFullYear(),
         month: lastMonthDate.getMonth() + 1,
-        isFinal: true
+        isFinal: true,
       },
     });
 
@@ -188,7 +188,14 @@ export class GeneralLedgerService {
         totalDebits: 0,
         totalCredits: 0,
         currentBalance: openingBal,
-        balanceType: openingBal >= 0 ? (account.nature === AccountNature.DEBIT ? 'DR' : 'CR') : (account.nature === AccountNature.DEBIT ? 'CR' : 'DR'),
+        balanceType:
+          openingBal >= 0
+            ? account.nature === AccountNature.DEBIT
+              ? 'DR'
+              : 'CR'
+            : account.nature === AccountNature.DEBIT
+              ? 'CR'
+              : 'DR',
       };
     }
 
@@ -215,7 +222,10 @@ export class GeneralLedgerService {
 
     // Calculate running balance
     let runningBalance = openingBalance.currentBalance;
-    if (openingBalance.balanceType === 'CR' && account.nature === AccountNature.DEBIT) {
+    if (
+      openingBalance.balanceType === 'CR' &&
+      account.nature === AccountNature.DEBIT
+    ) {
       runningBalance = -runningBalance;
     }
 
@@ -267,28 +277,97 @@ export class GeneralLedgerService {
    */
   async getTrialBalance(asOfDate?: Date): Promise<TrialBalance> {
     // Get all accounts
+    // Optimized implementation using QueryBuilder to avoid N+1 problem
+    const targetDate = asOfDate || new Date();
+
+    // 1. Get all accounts with their details (including deleted ones to ensure balance)
     const accounts = await this.accountRepository.find({
-      where: { deletedAt: null as any },
+      withDeleted: true,
       order: { code: 'ASC' },
+      select: [
+        'code',
+        'name',
+        'accountType',
+        'category',
+        'nature',
+        'openingBalance',
+        'openingDate',
+        'id',
+      ],
+    });
+
+    console.log(
+      `Trial Balance: Found ${accounts.length} accounts. Checking for 3-0001-0001: ${accounts.some((a) => a.code === '3-0001-0001')}`,
+    );
+
+    // 2. Get aggregated transaction totals for all accounts up to targetDate
+    // This assumes we want spot balances calculated from full history minus opening
+    // For proper performance on large datasets, we should use MonthlyBalance snapshots,
+    // but for this implementation we'll match the logic of summing all vouchers
+    // as requested by "sql-pro" to be "complex" and accurate.
+
+    const { raw, entities } = await this.voucherDetailRepository
+      .createQueryBuilder('detail')
+      .leftJoin('detail.voucher', 'voucher')
+      .select('detail.account_code', 'accountCode')
+      .addSelect('SUM(detail.debit_amount)', 'totalDebits')
+      .addSelect('SUM(detail.credit_amount)', 'totalCredits')
+      .where('voucher.is_posted = :isPosted', { isPosted: true })
+      .andWhere('voucher.deleted_at IS NULL')
+      .andWhere('voucher.voucher_date <= :targetDate', { targetDate })
+      .groupBy('detail.account_code')
+      .getRawAndEntities();
+
+    // Create a map for O(1) lookup
+    const transactionMap = new Map<
+      string,
+      { debits: number; credits: number }
+    >();
+    raw.forEach((row: any) => {
+      transactionMap.set(row.accountCode, {
+        debits: Number(row.totalDebits),
+        credits: Number(row.totalCredits),
+      });
     });
 
     const entries: TrialBalanceEntry[] = [];
     let totalDebits = 0;
     let totalCredits = 0;
 
-    // Calculate balance for each account
     for (const account of accounts) {
-      const balance = await this.getAccountBalance(account.code, asOfDate);
+      const openingBalance = Number(account.openingBalance || 0);
+      const transactions = transactionMap.get(account.code) || {
+        debits: 0,
+        credits: 0,
+      };
+
+      let currentBalance = 0;
+      let balanceType: 'DR' | 'CR';
+
+      // Calculate net balance
+      // Opening + Debits - Credits (for DEBIT nature)
+      // Opening + Credits - Debits (for CREDIT nature)
+
+      if (account.nature === AccountNature.DEBIT) {
+        currentBalance =
+          openingBalance + transactions.debits - transactions.credits;
+        balanceType = currentBalance >= 0 ? 'DR' : 'CR';
+      } else {
+        currentBalance =
+          openingBalance + transactions.credits - transactions.debits;
+        balanceType = currentBalance >= 0 ? 'CR' : 'DR';
+      }
+
+      currentBalance = Math.abs(currentBalance);
 
       let debitBalance = 0;
       let creditBalance = 0;
 
-      // Categorize balance as DR or CR
-      if (balance.balanceType === 'DR') {
-        debitBalance = balance.currentBalance;
+      if (balanceType === 'DR') {
+        debitBalance = currentBalance;
         totalDebits += debitBalance;
       } else {
-        creditBalance = balance.currentBalance;
+        creditBalance = currentBalance;
         totalCredits += creditBalance;
       }
 
@@ -369,7 +448,7 @@ export class GeneralLedgerService {
 
     if (!earliestVoucher) return;
 
-    let currentDate = new Date(earliestVoucher.voucherDate);
+    const currentDate = new Date(earliestVoucher.voucherDate);
     currentDate.setDate(1); // Start of month
 
     while (currentDate <= upToDate) {
@@ -388,12 +467,16 @@ export class GeneralLedgerService {
           const prevMonthBalance = await this.monthlyBalanceRepository.findOne({
             where: { accountId: account.id, year: prevYear, month: 12 },
           });
-          openingBalance = prevMonthBalance ? Number(prevMonthBalance.closingBalance) : Number(account.openingBalance);
+          openingBalance = prevMonthBalance
+            ? Number(prevMonthBalance.closingBalance)
+            : Number(account.openingBalance);
         } else {
           const prevMonthBalance = await this.monthlyBalanceRepository.findOne({
             where: { accountId: account.id, year, month: month - 1 },
           });
-          openingBalance = prevMonthBalance ? Number(prevMonthBalance.closingBalance) : Number(account.openingBalance);
+          openingBalance = prevMonthBalance
+            ? Number(prevMonthBalance.closingBalance)
+            : Number(account.openingBalance);
         }
 
         // 2. Sum debits and credits for this month
@@ -402,10 +485,14 @@ export class GeneralLedgerService {
           .leftJoin('detail.voucher', 'voucher')
           .select('SUM(detail.debit_amount)', 'totalDebits')
           .addSelect('SUM(detail.credit_amount)', 'totalCredits')
-          .where('detail.account_code = :accountCode', { accountCode: account.code })
+          .where('detail.account_code = :accountCode', {
+            accountCode: account.code,
+          })
           .andWhere('voucher.is_posted = :isPosted', { isPosted: true })
           .andWhere('voucher.deleted_at IS NULL')
-          .andWhere('voucher.voucher_date >= :startDate', { startDate: currentDate })
+          .andWhere('voucher.voucher_date >= :startDate', {
+            startDate: currentDate,
+          })
           .andWhere('voucher.voucher_date < :endDate', { endDate: nextMonth })
           .getRawOne();
 
@@ -447,4 +534,3 @@ export class GeneralLedgerService {
     }
   }
 }
-

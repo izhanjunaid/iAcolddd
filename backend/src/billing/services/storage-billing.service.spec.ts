@@ -1,17 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { StorageBillingService } from './storage-billing.service';
 import { TaxService } from '../../tax/tax.service';
-import { CalculateStorageBillingDto, RateType } from '../dto/calculate-storage-billing.dto';
+import {
+  CalculateStorageBillingDto,
+  RateType,
+} from '../dto/calculate-storage-billing.dto';
 import { TaxType } from '../../common/enums/tax-type.enum';
+import { BillingRateConfiguration } from '../../common/entities/billing-rate-configuration.entity';
 
 describe('StorageBillingService', () => {
   let service: StorageBillingService;
   let taxService: TaxService;
+  let rateConfigRepository: Repository<BillingRateConfiguration>;
 
   // Mock TaxService
   const mockTaxService = {
     calculateTax: jest.fn(),
+  };
+
+  // Mock Repository
+  const mockRateConfigRepository = {
+    createQueryBuilder: jest.fn(),
+    find: jest.fn(),
+    findOne: jest.fn(),
+    save: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -22,14 +37,30 @@ describe('StorageBillingService', () => {
           provide: TaxService,
           useValue: mockTaxService,
         },
+        {
+          provide: getRepositoryToken(BillingRateConfiguration),
+          useValue: mockRateConfigRepository,
+        },
       ],
     }).compile();
 
     service = module.get<StorageBillingService>(StorageBillingService);
     taxService = module.get<TaxService>(TaxService);
+    rateConfigRepository = module.get<Repository<BillingRateConfiguration>>(
+      getRepositoryToken(BillingRateConfiguration),
+    );
 
     // Reset mocks before each test
     jest.clearAllMocks();
+
+    // Default mock: No rates in database (will use fallback rates)
+    mockRateConfigRepository.createQueryBuilder.mockReturnValue({
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(null),
+    });
 
     // Default tax mock responses
     mockTaxService.calculateTax.mockImplementation((params) => {
@@ -415,8 +446,12 @@ describe('StorageBillingService', () => {
       expect(result.breakdown.storageCalculation).toContain('1000 kg');
       expect(result.breakdown.storageCalculation).toContain('PKR 2/kg/day');
       expect(result.breakdown.storageCalculation).toContain('10 days');
-      expect(result.breakdown.labourCalculation).toContain('Labour In: PKR 1000');
-      expect(result.breakdown.labourCalculation).toContain('Labour Out: PKR 1500');
+      expect(result.breakdown.labourCalculation).toContain(
+        'Labour In: PKR 1000',
+      );
+      expect(result.breakdown.labourCalculation).toContain(
+        'Labour Out: PKR 1500',
+      );
       expect(result.breakdown.labourCalculation).toContain('Loading: PKR 500');
       expect(result.breakdown.taxCalculation).toContain('GST');
       expect(result.breakdown.taxCalculation).toContain('WHT');
@@ -538,6 +573,224 @@ describe('StorageBillingService', () => {
 
       expect(result.dateIn).toEqual(dateIn);
       expect(result.dateOut).toEqual(dateOut);
+    });
+  });
+
+  describe('Monthly Rate (60+ days)', () => {
+    it('should automatically apply monthly rate for 60+ days storage', async () => {
+      const dto: CalculateStorageBillingDto = {
+        weight: 1000,
+        dateIn: new Date('2025-01-01T00:00:00Z'),
+        dateOut: new Date('2025-03-02T00:00:00Z'), // 60 days
+        // No rate specified
+        applyGst: false,
+        applyWht: false,
+      };
+
+      const result = await service.calculateStorageBilling(dto);
+
+      expect(result.daysStored).toBe(60);
+      expect(result.ratePerKgPerDay).toBe(1.2); // Monthly rate
+      expect(result.storageCharges).toBe(72000); // 1000 × 1.2 × 60
+    });
+
+    it('should apply monthly rate for 90 days storage', async () => {
+      const dto: CalculateStorageBillingDto = {
+        weight: 2000,
+        dateIn: new Date('2025-01-01T00:00:00Z'),
+        dateOut: new Date('2025-04-01T00:00:00Z'), // 90 days
+        applyGst: false,
+        applyWht: false,
+      };
+
+      const result = await service.calculateStorageBilling(dto);
+
+      expect(result.daysStored).toBe(90);
+      expect(result.ratePerKgPerDay).toBe(1.2); // Monthly rate
+      expect(result.storageCharges).toBe(216000); // 2000 × 1.2 × 90
+    });
+
+    it('should use seasonal rate for 59 days (not monthly)', async () => {
+      const dto: CalculateStorageBillingDto = {
+        weight: 1000,
+        dateIn: new Date('2025-01-01T00:00:00Z'),
+        dateOut: new Date('2025-03-01T00:00:00Z'), // 59 days
+        applyGst: false,
+        applyWht: false,
+      };
+
+      const result = await service.calculateStorageBilling(dto);
+
+      expect(result.daysStored).toBe(59);
+      expect(result.ratePerKgPerDay).toBe(1.5); // Seasonal rate, not monthly
+      expect(result.storageCharges).toBe(88500); // 1000 × 1.5 × 59
+    });
+  });
+
+  describe('Database-Driven Rates', () => {
+    it('should use database rate when available', async () => {
+      // Mock database to return a custom rate
+      mockRateConfigRepository.createQueryBuilder.mockReturnValue({
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue({
+          rateValue: 2.75,
+          rateType: 'daily',
+        }),
+      });
+
+      const dto: CalculateStorageBillingDto = {
+        weight: 1000,
+        dateIn: new Date('2025-01-01T00:00:00Z'),
+        dateOut: new Date('2025-01-11T00:00:00Z'),
+        applyGst: false,
+        applyWht: false,
+      };
+
+      const result = await service.calculateStorageBilling(dto);
+
+      expect(result.ratePerKgPerDay).toBe(2.75); // Database rate
+      expect(result.storageCharges).toBe(27500); // 1000 × 2.75 × 10
+    });
+
+    it('should use customer-specific rate from database', async () => {
+      // Mock database to return customer-specific rate
+      mockRateConfigRepository.createQueryBuilder.mockReturnValue({
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue({
+          rateValue: 1.75,
+          rateType: 'daily',
+          customerId: 'customer-123',
+        }),
+      });
+
+      const dto: CalculateStorageBillingDto = {
+        weight: 1000,
+        dateIn: new Date('2025-01-01T00:00:00Z'),
+        dateOut: new Date('2025-01-11T00:00:00Z'),
+        customerId: 'customer-123',
+        applyGst: false,
+        applyWht: false,
+      };
+
+      const result = await service.calculateStorageBilling(dto);
+
+      expect(result.ratePerKgPerDay).toBe(1.75); // Customer-specific rate
+      expect(result.storageCharges).toBe(17500); // 1000 × 1.75 × 10
+    });
+  });
+
+  describe('Real-World Cold Storage Scenarios', () => {
+    it('should calculate billing for short-term frozen meat storage', async () => {
+      // Scenario: 500 kg frozen chicken stored for 5 days
+      const dto: CalculateStorageBillingDto = {
+        weight: 500,
+        dateIn: new Date('2025-01-15T00:00:00Z'),
+        dateOut: new Date('2025-01-20T00:00:00Z'), // 5 days
+        ratePerKgPerDay: 2.0,
+        labourChargesIn: 500,
+        labourChargesOut: 500,
+        applyGst: true,
+        applyWht: true,
+      };
+
+      const result = await service.calculateStorageBilling(dto);
+
+      expect(result.storageCharges).toBe(5000); // 500 × 2 × 5
+      expect(result.labourCharges).toBe(1000); // 500 + 500
+      expect(result.subtotal).toBe(6000);
+      expect(result.gstAmount).toBe(1080); // 6000 × 0.18
+      expect(result.whtAmount).toBe(240); // 6000 × 0.04
+      expect(result.totalAmount).toBe(6840); // 6000 + 1080 - 240
+    });
+
+    it('should calculate billing for seasonal meat storage', async () => {
+      // Scenario: 2,000 kg meat stored for 44 days (seasonal)
+      const dto: CalculateStorageBillingDto = {
+        weight: 2000,
+        dateIn: new Date('2025-06-01T00:00:00Z'),
+        dateOut: new Date('2025-07-15T00:00:00Z'), // 44 days
+        labourChargesIn: 2000,
+        labourChargesOut: 2000,
+        applyGst: true,
+        applyWht: true,
+      };
+
+      const result = await service.calculateStorageBilling(dto);
+
+      expect(result.daysStored).toBe(44);
+      expect(result.ratePerKgPerDay).toBe(1.5); // Seasonal rate
+      expect(result.storageCharges).toBe(132000); // 2000 × 1.5 × 44
+      expect(result.labourCharges).toBe(4000);
+      expect(result.subtotal).toBe(136000);
+      expect(result.gstAmount).toBe(24480); // 136000 × 0.18
+      expect(result.whtAmount).toBe(5440); // 136000 × 0.04
+      expect(result.totalAmount).toBe(155040); // 136000 + 24480 - 5440
+    });
+
+    it('should calculate billing for long-term bulk storage', async () => {
+      // Scenario: 10,000 kg stored for 90 days (monthly rate)
+      const dto: CalculateStorageBillingDto = {
+        weight: 10000,
+        dateIn: new Date('2025-01-01T00:00:00Z'),
+        dateOut: new Date('2025-04-01T00:00:00Z'), // 90 days
+        labourChargesIn: 5000,
+        labourChargesOut: 5000,
+        loadingCharges: 3000,
+        applyGst: true,
+        applyWht: true,
+      };
+
+      const result = await service.calculateStorageBilling(dto);
+
+      expect(result.daysStored).toBe(90);
+      expect(result.ratePerKgPerDay).toBe(1.2); // Monthly rate
+      expect(result.storageCharges).toBe(1080000); // 10000 × 1.2 × 90
+      expect(result.labourCharges).toBe(10000);
+      expect(result.loadingCharges).toBe(3000);
+      expect(result.subtotal).toBe(1093000);
+      expect(result.gstAmount).toBe(196740); // 1093000 × 0.18
+      expect(result.whtAmount).toBe(43720); // 1093000 × 0.04
+      expect(result.totalAmount).toBe(1246020); // 1093000 + 196740 - 43720
+    });
+
+    it('should handle partial day storage correctly', async () => {
+      // Scenario: Item in at 10 AM, out at 2 PM next day (1.17 days → 2 days charged)
+      const dto: CalculateStorageBillingDto = {
+        weight: 100,
+        dateIn: new Date('2025-01-01T10:00:00Z'),
+        dateOut: new Date('2025-01-02T14:00:00Z'), // 1.17 days
+        ratePerKgPerDay: 2,
+        applyGst: false,
+        applyWht: false,
+      };
+
+      const result = await service.calculateStorageBilling(dto);
+
+      expect(result.daysStored).toBe(2); // Rounded up from 1.17
+      expect(result.storageCharges).toBe(400); // 100 × 2 × 2
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should throw error for invalid date sequence', async () => {
+      const dto: CalculateStorageBillingDto = {
+        weight: 1000,
+        dateIn: new Date('2025-01-15T00:00:00Z'),
+        dateOut: new Date('2025-01-10T00:00:00Z'), // Before dateIn
+        ratePerKgPerDay: 2,
+        applyGst: false,
+        applyWht: false,
+      };
+
+      await expect(service.calculateStorageBilling(dto)).rejects.toThrow(
+        'Date out cannot be before date in',
+      );
     });
   });
 });

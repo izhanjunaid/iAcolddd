@@ -67,4 +67,3 @@ export class CostCenter {
   level?: number;
   path?: string;
 }
-

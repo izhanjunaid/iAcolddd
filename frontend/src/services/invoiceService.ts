@@ -67,13 +67,26 @@ export const invoiceService = {
   },
 
   /**
-   * Record payment for invoice
+   * Record payment for invoice with Receipt Voucher creation
    */
-  async recordPayment(id: string, amount: number, paymentDate?: string) {
+  async recordPayment(id: string, paymentData: {
+    amount: number;
+    paymentDate?: string;
+    paymentMode?: 'CASH' | 'CHEQUE' | 'ONLINE_TRANSFER';
+    chequeNumber?: string;
+    chequeDate?: string;
+    bankName?: string;
+    bankReference?: string;
+  }) {
     const response = await api.post<Invoice>(
       `/invoices/${id}/payment`,
-      { amount, paymentDate }
+      paymentData
     );
+    return response.data;
+  },
+
+  async createDebitNote(invoiceId: string, data: { amount: number; reason: string }) {
+    const response = await api.post(`/invoices/${invoiceId}/debit-note`, data);
     return response.data;
   },
 
@@ -82,6 +95,11 @@ export const invoiceService = {
    */
   async cancelInvoice(id: string) {
     const response = await api.patch<Invoice>(`/invoices/${id}/cancel`, {});
+    return response.data;
+  },
+
+  async createCreditNote(invoiceId: string, data: { amount: number; reason: string }) {
+    const response = await api.post(`/invoices/${invoiceId}/credit-note`, data);
     return response.data;
   },
 
@@ -112,5 +130,19 @@ export const invoiceService = {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Add miscellaneous charge to invoice (submits for Maker-Checker approval)
+   */
+  async addMiscCharge(invoiceId: string, data: {
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    taxRate?: number;
+    reason?: string;
+  }) {
+    const response = await api.post(`/invoices/${invoiceId}/add-charge`, data);
+    return response.data;
   },
 };

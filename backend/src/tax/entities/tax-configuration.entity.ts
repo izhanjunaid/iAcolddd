@@ -35,11 +35,21 @@ export class TaxConfiguration {
   @Column({ type: 'boolean', default: false, name: 'is_exempt' })
   isExempt: boolean;
 
-  @Column({ type: 'varchar', length: 500, nullable: true, name: 'exemption_reason' })
+  @Column({
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+    name: 'exemption_reason',
+  })
   exemptionReason: string;
 
   // Certificate details for tax exemption
-  @Column({ type: 'varchar', length: 100, nullable: true, name: 'exemption_certificate_number' })
+  @Column({
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+    name: 'exemption_certificate_number',
+  })
   exemptionCertificateNumber: string;
 
   @Column({ type: 'date', nullable: true, name: 'exemption_valid_from' })

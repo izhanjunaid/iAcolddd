@@ -7,4 +7,3 @@ export enum AccountCategory {
   CUSTOMER = 'CUSTOMER', // Customer Accounts Receivable
   SUPPLIER = 'SUPPLIER', // Supplier Accounts Payable
 }
-

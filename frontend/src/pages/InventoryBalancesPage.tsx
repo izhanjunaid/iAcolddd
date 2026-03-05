@@ -5,7 +5,8 @@ import {
   type InventoryBalance,
   type QueryInventoryBalancesDto,
   type InventoryItem,
-  type Warehouse
+  type Warehouse,
+  type Room
 } from '../types/inventory';
 
 const InventoryBalancesPage: React.FC = () => {
@@ -13,9 +14,11 @@ const InventoryBalancesPage: React.FC = () => {
   const [balances, setBalances] = useState<InventoryBalance[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWarehouse, setSelectedWarehouse] = useState('');
+  const [selectedRoom, setSelectedRoom] = useState('');
   const [onlyWithStock, setOnlyWithStock] = useState(true);
 
   // Pagination state
@@ -29,9 +32,19 @@ const InventoryBalancesPage: React.FC = () => {
     loadInitialData();
   }, []);
 
+  // Fetch rooms when warehouse changes
   useEffect(() => {
-    loadBalances();
-  }, [searchTerm, selectedWarehouse, onlyWithStock]);
+    if (selectedWarehouse) {
+      loadRooms(selectedWarehouse);
+    } else {
+      setRooms([]);
+      setSelectedRoom('');
+    }
+  }, [selectedWarehouse]);
+
+  useEffect(() => {
+    loadBalances(currentPage);
+  }, [searchTerm, selectedWarehouse, selectedRoom, onlyWithStock, currentPage]);
 
   const loadInitialData = async () => {
     try {
@@ -47,6 +60,15 @@ const InventoryBalancesPage: React.FC = () => {
     }
   };
 
+  const loadRooms = async (warehouseId: string) => {
+    try {
+      const roomsRes = await inventoryService.rooms.getRooms(warehouseId);
+      setRooms(roomsRes);
+    } catch (error) {
+      console.error('Error loading rooms:', error);
+    }
+  };
+
   const loadBalances = async (page = 1) => {
     try {
       setLoading(true);
@@ -54,6 +76,7 @@ const InventoryBalancesPage: React.FC = () => {
         page,
         limit: itemsPerPage,
         warehouseId: selectedWarehouse || undefined,
+        roomId: selectedRoom || undefined,
         onlyWithStock,
       };
 
@@ -91,7 +114,7 @@ const InventoryBalancesPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Inventory Balances</h1>
-          <p className="text-gray-600">View current stock levels and inventory valuation</p>
+          <p className="text-gray-600">View current stock levels and inventory valuation by location</p>
         </div>
       </div>
 
@@ -170,6 +193,19 @@ const InventoryBalancesPage: React.FC = () => {
             <option value="">All Warehouses</option>
             {warehouses.map(warehouse => (
               <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
+            ))}
+          </select>
+
+          {/* Room filter */}
+          <select
+            value={selectedRoom}
+            onChange={(e) => setSelectedRoom(e.target.value)}
+            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            disabled={!selectedWarehouse}
+          >
+            <option value="">All Rooms</option>
+            {rooms.map(room => (
+              <option key={room.id} value={room.id}>{room.name}</option>
             ))}
           </select>
 
@@ -263,7 +299,7 @@ const InventoryBalancesPage: React.FC = () => {
 
                       <td className="px-4 py-3">
                         <div className={`text-sm font-medium ${balance.quantityAvailable <= 0 ? 'text-red-600' :
-                            balance.quantityAvailable < 10 ? 'text-yellow-600' : 'text-green-600'
+                          balance.quantityAvailable < 10 ? 'text-yellow-600' : 'text-green-600'
                           }`}>
                           {balance.quantityAvailable.toLocaleString()}
                         </div>

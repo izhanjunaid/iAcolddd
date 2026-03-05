@@ -18,4 +18,4 @@ import { Account } from '../accounts/entities/account.entity';
   controllers: [BankReconciliationController],
   providers: [BankReconciliationService],
 })
-export class BankReconciliationModule { }
+export class BankReconciliationModule {}

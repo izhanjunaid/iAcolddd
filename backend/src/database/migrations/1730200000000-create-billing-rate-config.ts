@@ -1,12 +1,14 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateBillingRateConfig1730200000000 implements MigrationInterface {
+export class CreateBillingRateConfig1730200000000
+  implements MigrationInterface
+{
   name = 'CreateBillingRateConfig1730200000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Create billing_rate_configuration table
     await queryRunner.query(`
-      CREATE TABLE "billing_rate_configuration" (
+      CREATE TABLE IF NOT EXISTS "billing_rate_configuration" (
         "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         "rate_type" VARCHAR(50) NOT NULL,
         "rate_name" VARCHAR(100) NOT NULL,
@@ -42,19 +44,19 @@ export class CreateBillingRateConfig1730200000000 implements MigrationInterface 
 
     // Create indexes
     await queryRunner.query(`
-      CREATE INDEX "idx_billing_rate_type" ON "billing_rate_configuration"("rate_type");
+      CREATE INDEX IF NOT EXISTS "idx_billing_rate_type" ON "billing_rate_configuration"("rate_type");
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "idx_billing_rate_customer" ON "billing_rate_configuration"("customer_id");
+      CREATE INDEX IF NOT EXISTS "idx_billing_rate_customer" ON "billing_rate_configuration"("customer_id");
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "idx_billing_rate_active" ON "billing_rate_configuration"("is_active");
+      CREATE INDEX IF NOT EXISTS "idx_billing_rate_active" ON "billing_rate_configuration"("is_active");
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "idx_billing_rate_effective_dates"
+      CREATE INDEX IF NOT EXISTS "idx_billing_rate_effective_dates"
       ON "billing_rate_configuration"("effective_from", "effective_to");
     `);
 
@@ -79,7 +81,15 @@ export class CreateBillingRateConfig1730200000000 implements MigrationInterface 
       'Optional: category-specific rate (NULL for all categories)';
     `);
 
-    // Insert default billing rates
+    // Insert default billing rates - using rate_name or rate_type + rate_name as unique identifier logic for conflict?
+    // The table doesn't have a unique key other than ID.
+    // We should check if exists or just ignore duplication if we can't ensure it.
+    // Ideally add UNIQUE constraint on (rate_type, rate_name, customer_id, product_category_id, effective_from)
+    // For now, let's use DO block to insert if not exists based on logic.
+
+    // Actually, simpler to just wrap in a check.
+
+    // Daily
     await queryRunner.query(`
       INSERT INTO "billing_rate_configuration"
         ("rate_type", "rate_name", "rate_value", "effective_from", "description", "created_by_id")
@@ -92,9 +102,13 @@ export class CreateBillingRateConfig1730200000000 implements MigrationInterface 
         u.id
       FROM users u
       WHERE u.username = 'admin'
+      AND NOT EXISTS (
+          SELECT 1 FROM "billing_rate_configuration" WHERE "rate_name" = 'Default Daily Storage Rate'
+      )
       LIMIT 1;
     `);
 
+    // Seasonal
     await queryRunner.query(`
       INSERT INTO "billing_rate_configuration"
         ("rate_type", "rate_name", "rate_value", "effective_from", "description", "created_by_id")
@@ -107,9 +121,13 @@ export class CreateBillingRateConfig1730200000000 implements MigrationInterface 
         u.id
       FROM users u
       WHERE u.username = 'admin'
+      AND NOT EXISTS (
+          SELECT 1 FROM "billing_rate_configuration" WHERE "rate_name" = 'Seasonal Storage Rate'
+      )
       LIMIT 1;
     `);
 
+    // Monthly
     await queryRunner.query(`
       INSERT INTO "billing_rate_configuration"
         ("rate_type", "rate_name", "rate_value", "effective_from", "description", "created_by_id")
@@ -122,9 +140,13 @@ export class CreateBillingRateConfig1730200000000 implements MigrationInterface 
         u.id
       FROM users u
       WHERE u.username = 'admin'
+      AND NOT EXISTS (
+          SELECT 1 FROM "billing_rate_configuration" WHERE "rate_name" = 'Monthly Commitment Rate'
+      )
       LIMIT 1;
     `);
 
+    // Loading
     await queryRunner.query(`
       INSERT INTO "billing_rate_configuration"
         ("rate_type", "rate_name", "rate_value", "effective_from", "description", "created_by_id")
@@ -137,12 +159,17 @@ export class CreateBillingRateConfig1730200000000 implements MigrationInterface 
         u.id
       FROM users u
       WHERE u.username = 'admin'
+      AND NOT EXISTS (
+          SELECT 1 FROM "billing_rate_configuration" WHERE "rate_name" = 'Loading/Unloading Labour Rate'
+      )
       LIMIT 1;
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop table (cascade will handle dependencies)
-    await queryRunner.query(`DROP TABLE IF EXISTS "billing_rate_configuration" CASCADE;`);
+    await queryRunner.query(
+      `DROP TABLE IF EXISTS "billing_rate_configuration" CASCADE;`,
+    );
   }
 }

@@ -26,7 +26,12 @@ export class Customer {
   name: string;
 
   // Contact Information
-  @Column({ type: 'varchar', length: 200, nullable: true, name: 'contact_person' })
+  @Column({
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+    name: 'contact_person',
+  })
   contactPerson: string | null;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
@@ -39,10 +44,20 @@ export class Customer {
   mobile: string | null;
 
   // Address
-  @Column({ type: 'varchar', length: 200, nullable: true, name: 'address_line1' })
+  @Column({
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+    name: 'address_line1',
+  })
   addressLine1: string | null;
 
-  @Column({ type: 'varchar', length: 200, nullable: true, name: 'address_line2' })
+  @Column({
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+    name: 'address_line2',
+  })
   addressLine2: string | null;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
@@ -58,7 +73,13 @@ export class Customer {
   postalCode: string | null;
 
   // Business Terms
-  @Column({ type: 'decimal', precision: 18, scale: 2, default: 0, name: 'credit_limit' })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 2,
+    default: 0,
+    name: 'credit_limit',
+  })
   creditLimit: number;
 
   @Column({ type: 'integer', default: 0, name: 'credit_days' })
@@ -119,4 +140,3 @@ export class Customer {
   displayName?: string; // Computed: code + name
   currentBalance?: number; // From general ledger
 }
-

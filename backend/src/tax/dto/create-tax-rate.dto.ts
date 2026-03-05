@@ -1,4 +1,13 @@
-import { IsString, IsEnum, IsNumber, IsBoolean, IsOptional, IsDateString, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsBoolean,
+  IsOptional,
+  IsDateString,
+  Min,
+  Max,
+} from 'class-validator';
 import { TaxType } from '../../common/enums/tax-type.enum';
 import { TaxApplicability } from '../../common/enums/tax-applicability.enum';
 

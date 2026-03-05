@@ -14,7 +14,9 @@ import {
 } from '../components/ui/Table';
 import { generalLedgerService } from '../services/generalLedgerService';
 import type { TrialBalance } from '../types/voucher';
-import { CheckCircle, AlertCircle, Download } from 'lucide-react';
+import { CheckCircle, AlertCircle, Download, FileText } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export const TrialBalancePage = () => {
   const navigate = useNavigate();
@@ -78,6 +80,79 @@ export const TrialBalancePage = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const exportToPDF = () => {
+    if (!trialBalance) return;
+
+    const doc = new jsPDF();
+
+    // Title
+    doc.setFontSize(18);
+    doc.text('Trial Balance Report', 14, 22);
+
+    // Metadata
+    doc.setFontSize(11);
+    doc.text(`As of Date: ${asOfDate}`, 14, 30);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 36);
+
+    // Balance Status
+    if (trialBalance.isBalanced) {
+      doc.setTextColor(0, 128, 0);
+      doc.text('Status: Balanced', 14, 44);
+    } else {
+      doc.setTextColor(255, 0, 0);
+      doc.text(`Status: OUT OF BALANCE (Diff: ${trialBalance.difference.toFixed(2)})`, 14, 44);
+    }
+    doc.setTextColor(0, 0, 0);
+
+    // Table
+    const tableColumn = ['Code', 'Account Name', 'Type', 'Category', 'Debit', 'Credit'];
+    const tableRows: any[] = [];
+
+    trialBalance.accounts.forEach((acc) => {
+      const row = [
+        acc.accountCode,
+        acc.accountName,
+        acc.accountType,
+        acc.category,
+        acc.debitBalance > 0 ? acc.debitBalance.toFixed(2) : '-',
+        acc.creditBalance > 0 ? acc.creditBalance.toFixed(2) : '-',
+      ];
+      tableRows.push(row);
+    });
+
+    // Totals Row
+    tableRows.push([
+      '',
+      'TOTALS',
+      '',
+      '',
+      trialBalance.totalDebits.toFixed(2),
+      trialBalance.totalCredits.toFixed(2)
+    ]);
+
+    (doc as any).autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 50,
+      theme: 'grid',
+      headStyles: { fillColor: [66, 66, 66] },
+      footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+      columnStyles: {
+        4: { halign: 'right' },
+        5: { halign: 'right' },
+      },
+      didParseCell: (data: any) => {
+        // Style the last row (Totals)
+        if (data.row.index === tableRows.length - 1) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [240, 240, 240];
+        }
+      }
+    });
+
+    doc.save(`trial-balance-${asOfDate}.pdf`);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -125,6 +200,14 @@ export const TrialBalancePage = () => {
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
+              </Button>
+              <Button
+                variant="outline"
+                onClick={exportToPDF}
+                disabled={!trialBalance}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Export PDF
               </Button>
             </div>
 

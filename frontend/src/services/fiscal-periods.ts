@@ -50,5 +50,16 @@ export const fiscalPeriodsApi = {
     const response = await api.post(`/fiscal-periods/periods/${periodId}/reopen`);
     return response.data;
   },
-};
 
+  // Preview year-end closing
+  previewYearEndClosing: async (yearId: string): Promise<any> => {
+    const response = await api.get(`/fiscal-periods/years/${yearId}/year-end-preview`);
+    return response.data;
+  },
+
+  // Execute year-end closing
+  closeYear: async (yearId: string): Promise<any> => {
+    const response = await api.post(`/fiscal-periods/years/${yearId}/close-year`);
+    return response.data;
+  },
+};

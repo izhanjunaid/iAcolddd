@@ -1,8 +1,7 @@
 export { InventoryItemsController } from './inventory-items.controller';
-export { 
+export {
   InventoryTransactionsController,
   InventoryBalancesController,
-  InventoryReportsController 
+  InventoryReportsController,
 } from './inventory-transactions.controller';
 export { WarehousesController } from './warehouses.controller';
-

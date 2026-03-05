@@ -13,7 +13,9 @@ export class InvoiceLineItem {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Invoice, (invoice) => invoice.lineItems, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Invoice, (invoice) => invoice.lineItems, {
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({ name: 'invoice_id' })
   invoice: Invoice;
 
@@ -29,15 +31,39 @@ export class InvoiceLineItem {
   @Column({ type: 'decimal', precision: 12, scale: 4, default: 1 })
   quantity: number;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, name: 'unit_price', default: 0 })
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'unit_price',
+    default: 0,
+  })
   unitPrice: number;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, name: 'line_total', default: 0 })
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'line_total',
+    default: 0,
+  })
   lineTotal: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, name: 'tax_rate', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    name: 'tax_rate',
+    nullable: true,
+  })
   taxRate: number | null;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, name: 'tax_amount', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'tax_amount',
+    nullable: true,
+  })
   taxAmount: number | null;
 }

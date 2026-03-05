@@ -64,7 +64,10 @@ export class UsersService {
   }
 
   // Check if user has permission
-  async hasPermission(userId: string, permissionCode: string): Promise<boolean> {
+  async hasPermission(
+    userId: string,
+    permissionCode: string,
+  ): Promise<boolean> {
     const permissions = await this.getUserPermissions(userId);
     return permissions.includes(permissionCode);
   }

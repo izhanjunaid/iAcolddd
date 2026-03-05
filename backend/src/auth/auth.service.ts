@@ -153,8 +153,15 @@ export class AuthService {
     };
 
     // Generate access token
+    const secret =
+      this.configService.get('JWT_SECRET') ||
+      'default-secret-change-in-production';
+    console.log(
+      `AuthService: Signing with secret prefix: ${secret ? secret.substring(0, 3) : 'undefined'}`,
+    );
+
     const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.get('JWT_SECRET'),
+      secret: secret,
       expiresIn: this.configService.get('JWT_EXPIRATION'),
     });
 

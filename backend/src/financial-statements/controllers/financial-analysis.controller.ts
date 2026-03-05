@@ -1,6 +1,20 @@
-import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus, Res, Header } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Res,
+  Header,
+} from '@nestjs/common';
 import type { Response } from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../auth/guards/permissions.guard';
 import { RequirePermissions } from '../../auth/decorators/permissions.decorator';
@@ -24,7 +38,10 @@ export class FinancialAnalysisController {
   @ApiOperation({
     summary: 'Perform comprehensive financial analysis with all ratios',
   })
-  @ApiResponse({ status: 200, description: 'Financial analysis completed successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Financial analysis completed successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async performFinancialAnalysis(@Body() dto: FinancialAnalysisRequestDto) {
@@ -35,17 +52,25 @@ export class FinancialAnalysisController {
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('financial-statements.export')
   @Header('Content-Type', 'application/pdf')
-  @Header('Content-Disposition', 'attachment; filename="financial-analysis.pdf"')
+  @Header(
+    'Content-Disposition',
+    'attachment; filename="financial-analysis.pdf"',
+  )
   @ApiOperation({ summary: 'Export Financial Analysis as PDF' })
   @ApiResponse({ status: 200, description: 'PDF generated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async exportFinancialAnalysisPdf(
     @Body() dto: FinancialAnalysisRequestDto,
     @Res() res: Response,
   ) {
-    const analysis = await this.financialAnalysisService.performFinancialAnalysis(dto);
-    const pdfBuffer = await this.pdfService.generateFinancialAnalysisPdf(analysis);
+    const analysis =
+      await this.financialAnalysisService.performFinancialAnalysis(dto);
+    const pdfBuffer =
+      await this.pdfService.generateFinancialAnalysisPdf(analysis);
 
     res.setHeader('Content-Length', pdfBuffer.length);
     res.send(pdfBuffer);

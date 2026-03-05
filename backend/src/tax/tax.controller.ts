@@ -10,7 +10,12 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { TaxService } from './tax.service';
 import {
   CreateTaxRateDto,
@@ -72,7 +77,7 @@ export class TaxController {
   async updateTaxRate(
     @Param('id') id: string,
     @Body() updateDto: UpdateTaxRateDto,
-    @Request() req
+    @Request() req,
   ) {
     return await this.taxService.updateTaxRate(id, updateDto, req.user.sub);
   }
@@ -104,7 +109,10 @@ export class TaxController {
   @Post('calculate-invoice')
   @RequirePermissions('tax:calculate')
   @ApiOperation({ summary: 'Calculate all taxes for an invoice' })
-  @ApiResponse({ status: 200, description: 'Invoice taxes calculated successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Invoice taxes calculated successfully',
+  })
   async calculateInvoiceTaxes(@Body() calculateDto: CalculateInvoiceTaxDto) {
     return await this.taxService.calculateInvoiceTaxes(calculateDto);
   }
@@ -116,29 +124,44 @@ export class TaxController {
   @Post('configurations')
   @RequirePermissions('tax:configure')
   @ApiOperation({ summary: 'Create entity-specific tax configuration' })
-  @ApiResponse({ status: 201, description: 'Tax configuration created successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'Tax configuration created successfully',
+  })
   async createTaxConfiguration(
     @Body() createDto: CreateTaxConfigurationDto,
-    @Request() req
+    @Request() req,
   ) {
-    return await this.taxService.createTaxConfiguration(createDto, req.user.sub);
+    return await this.taxService.createTaxConfiguration(
+      createDto,
+      req.user.sub,
+    );
   }
 
   @Get('configurations/:entityType/:entityId')
   @RequirePermissions('tax:view')
   @ApiOperation({ summary: 'Get tax configurations for an entity' })
-  @ApiResponse({ status: 200, description: 'Configurations retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Configurations retrieved successfully',
+  })
   async findTaxConfigurationsForEntity(
     @Param('entityType') entityType: TaxEntityType,
-    @Param('entityId') entityId: string
+    @Param('entityId') entityId: string,
   ) {
-    return await this.taxService.findTaxConfigurationsForEntity(entityType, entityId);
+    return await this.taxService.findTaxConfigurationsForEntity(
+      entityType,
+      entityId,
+    );
   }
 
   @Delete('configurations/:id')
   @RequirePermissions('tax:configure')
   @ApiOperation({ summary: 'Delete a tax configuration' })
-  @ApiResponse({ status: 200, description: 'Tax configuration deleted successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Tax configuration deleted successfully',
+  })
   @ApiResponse({ status: 404, description: 'Tax configuration not found' })
   async deleteTaxConfiguration(@Param('id') id: string) {
     await this.taxService.deleteTaxConfiguration(id);

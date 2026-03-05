@@ -1,6 +1,20 @@
-import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus, Res, Header } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Res,
+  Header,
+} from '@nestjs/common';
 import type { Response } from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../auth/guards/permissions.guard';
 import { RequirePermissions } from '../../auth/decorators/permissions.decorator';
@@ -21,8 +35,13 @@ export class BalanceSheetController {
   @Post('generate')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('financial-statements.read')
-  @ApiOperation({ summary: 'Generate Balance Sheet (Statement of Financial Position)' })
-  @ApiResponse({ status: 200, description: 'Balance Sheet generated successfully' })
+  @ApiOperation({
+    summary: 'Generate Balance Sheet (Statement of Financial Position)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Balance Sheet generated successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async generateBalanceSheet(@Body() dto: BalanceSheetRequestDto) {
@@ -37,13 +56,18 @@ export class BalanceSheetController {
   @ApiOperation({ summary: 'Export Balance Sheet as PDF' })
   @ApiResponse({ status: 200, description: 'PDF generated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async exportBalanceSheetPdf(
     @Body() dto: BalanceSheetRequestDto,
     @Res() res: Response,
   ) {
-    const balanceSheet = await this.balanceSheetService.generateBalanceSheet(dto);
-    const pdfBuffer = await this.pdfService.generateBalanceSheetPdf(balanceSheet);
+    const balanceSheet =
+      await this.balanceSheetService.generateBalanceSheet(dto);
+    const pdfBuffer =
+      await this.pdfService.generateBalanceSheetPdf(balanceSheet);
 
     res.setHeader('Content-Length', pdfBuffer.length);
     res.send(pdfBuffer);

@@ -1,4 +1,11 @@
-import { IsDate, IsOptional, IsEnum, IsBoolean, IsString, IsNumber } from 'class-validator';
+import {
+  IsDate,
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  IsString,
+  IsNumber,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -30,7 +37,10 @@ export class BaseStatementRequestDto {
   @Type(() => Date)
   periodEnd: Date;
 
-  @ApiPropertyOptional({ description: 'Include previous period comparison', default: false })
+  @ApiPropertyOptional({
+    description: 'Include previous period comparison',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   includeComparison?: boolean;
@@ -40,13 +50,17 @@ export class BaseStatementRequestDto {
   @IsEnum(ComparisonType)
   comparisonType?: ComparisonType;
 
-  @ApiPropertyOptional({ description: 'Previous period start date (for custom comparison)' })
+  @ApiPropertyOptional({
+    description: 'Previous period start date (for custom comparison)',
+  })
   @IsOptional()
   @IsDate()
   @Type(() => Date)
   previousPeriodStart?: Date;
 
-  @ApiPropertyOptional({ description: 'Previous period end date (for custom comparison)' })
+  @ApiPropertyOptional({
+    description: 'Previous period end date (for custom comparison)',
+  })
   @IsOptional()
   @IsDate()
   @Type(() => Date)
@@ -62,7 +76,10 @@ export class BaseStatementRequestDto {
   @IsEnum(StatementFormat)
   format?: StatementFormat;
 
-  @ApiPropertyOptional({ description: 'Include only posted vouchers', default: true })
+  @ApiPropertyOptional({
+    description: 'Include only posted vouchers',
+    default: true,
+  })
   @IsOptional()
   @IsBoolean()
   postedOnly?: boolean;
@@ -72,17 +89,26 @@ export class BaseStatementRequestDto {
  * Balance Sheet specific request
  */
 export class BalanceSheetRequestDto extends BaseStatementRequestDto {
-  @ApiPropertyOptional({ description: 'Include financial metrics', default: true })
+  @ApiPropertyOptional({
+    description: 'Include financial metrics',
+    default: true,
+  })
   @IsOptional()
   @IsBoolean()
   includeMetrics?: boolean;
 
-  @ApiPropertyOptional({ description: 'Show detailed breakdown', default: false })
+  @ApiPropertyOptional({
+    description: 'Show detailed breakdown',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   detailed?: boolean;
 
-  @ApiPropertyOptional({ description: 'Include zero-balance accounts', default: false })
+  @ApiPropertyOptional({
+    description: 'Include zero-balance accounts',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   includeZeroBalances?: boolean;
@@ -97,12 +123,18 @@ export class IncomeStatementRequestDto extends BaseStatementRequestDto {
   @IsBoolean()
   multiStep?: boolean;
 
-  @ApiPropertyOptional({ description: 'Include EBITDA calculation', default: true })
+  @ApiPropertyOptional({
+    description: 'Include EBITDA calculation',
+    default: true,
+  })
   @IsOptional()
   @IsBoolean()
   includeEbitda?: boolean;
 
-  @ApiPropertyOptional({ description: 'Tax rate for calculations (0-100)', default: 0 })
+  @ApiPropertyOptional({
+    description: 'Tax rate for calculations (0-100)',
+    default: 0,
+  })
   @IsOptional()
   @IsNumber()
   taxRate?: number;
@@ -127,12 +159,17 @@ export class CashFlowStatementRequestDto extends BaseStatementRequestDto {
   @IsBoolean()
   indirectMethod?: boolean;
 
-  @ApiPropertyOptional({ description: 'Include cash flow metrics', default: true })
+  @ApiPropertyOptional({
+    description: 'Include cash flow metrics',
+    default: true,
+  })
   @IsOptional()
   @IsBoolean()
   includeMetrics?: boolean;
 
-  @ApiPropertyOptional({ description: 'Capital expenditure for free cash flow calculation' })
+  @ApiPropertyOptional({
+    description: 'Capital expenditure for free cash flow calculation',
+  })
   @IsOptional()
   @IsNumber()
   capitalExpenditure?: number;
@@ -152,12 +189,17 @@ export class FinancialAnalysisRequestDto {
   @Type(() => Date)
   periodEnd: Date;
 
-  @ApiPropertyOptional({ description: 'Include trend analysis', default: false })
+  @ApiPropertyOptional({
+    description: 'Include trend analysis',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   includeTrends?: boolean;
 
-  @ApiPropertyOptional({ description: 'Number of shares for per-share calculations' })
+  @ApiPropertyOptional({
+    description: 'Number of shares for per-share calculations',
+  })
   @IsOptional()
   @IsNumber()
   sharesOutstanding?: number;
@@ -174,7 +216,11 @@ export class FinancialAnalysisRequestDto {
 export class ExportOptionsDto {
   @ApiProperty({ description: 'Statement type to export' })
   @IsString()
-  statementType: 'balance-sheet' | 'income-statement' | 'cash-flow' | 'changes-in-equity';
+  statementType:
+    | 'balance-sheet'
+    | 'income-statement'
+    | 'cash-flow'
+    | 'changes-in-equity';
 
   @ApiProperty({ description: 'Statement period start date' })
   @IsDate()

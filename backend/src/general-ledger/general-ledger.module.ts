@@ -7,10 +7,16 @@ import { Account } from '../accounts/entities/account.entity';
 import { MonthlyBalance } from '../accounts/entities/monthly-balance.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([VoucherMaster, VoucherDetail, Account, MonthlyBalance])],
+  imports: [
+    TypeOrmModule.forFeature([
+      VoucherMaster,
+      VoucherDetail,
+      Account,
+      MonthlyBalance,
+    ]),
+  ],
   controllers: [GeneralLedgerController],
   providers: [GeneralLedgerService],
   exports: [GeneralLedgerService],
 })
-export class GeneralLedgerModule { }
-
+export class GeneralLedgerModule {}

@@ -5,10 +5,11 @@ import { CustomersService } from './customers.service';
 import { Customer } from './entities/customer.entity';
 import { AccountsModule } from '../accounts/accounts.module';
 import { GeneralLedgerModule } from '../general-ledger/general-ledger.module';
+import { GlAccountConfiguration } from '../common/entities/gl-account-configuration.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Customer]),
+    TypeOrmModule.forFeature([Customer, GlAccountConfiguration]),
     AccountsModule, // Import AccountsModule for integration
     GeneralLedgerModule,
   ],
@@ -19,5 +20,4 @@ import { GeneralLedgerModule } from '../general-ledger/general-ledger.module';
     TypeOrmModule, // Export TypeORM module to make CustomerRepository available
   ],
 })
-export class CustomersModule { }
-
+export class CustomersModule {}

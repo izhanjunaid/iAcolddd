@@ -1,6 +1,20 @@
-import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus, Res, Header } from '@nestjs/common';
-import type { Response} from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Res,
+  Header,
+} from '@nestjs/common';
+import type { Response } from 'express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../auth/guards/permissions.guard';
 import { RequirePermissions } from '../../auth/decorators/permissions.decorator';
@@ -22,7 +36,10 @@ export class CashFlowController {
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('financial-statements.read')
   @ApiOperation({ summary: 'Generate Cash Flow Statement (Indirect Method)' })
-  @ApiResponse({ status: 200, description: 'Cash Flow Statement generated successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Cash Flow Statement generated successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async generateCashFlowStatement(@Body() dto: CashFlowStatementRequestDto) {
@@ -33,11 +50,17 @@ export class CashFlowController {
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('financial-statements.export')
   @Header('Content-Type', 'application/pdf')
-  @Header('Content-Disposition', 'attachment; filename="cash-flow-statement.pdf"')
+  @Header(
+    'Content-Disposition',
+    'attachment; filename="cash-flow-statement.pdf"',
+  )
   @ApiOperation({ summary: 'Export Cash Flow Statement as PDF' })
   @ApiResponse({ status: 200, description: 'PDF generated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async exportCashFlowPdf(
     @Body() dto: CashFlowStatementRequestDto,
     @Res() res: Response,

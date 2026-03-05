@@ -48,22 +48,50 @@ export class InventoryItem {
   @Column({ type: 'integer', nullable: true, name: 'shelf_life_days' })
   shelfLifeDays: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true, name: 'min_temperature' })
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    name: 'min_temperature',
+  })
   minTemperature: number;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true, name: 'max_temperature' })
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    name: 'max_temperature',
+  })
   maxTemperature: number;
 
   // Costing
-  @Column({ type: 'decimal', precision: 18, scale: 4, default: 0, name: 'standard_cost' })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 4,
+    default: 0,
+    name: 'standard_cost',
+  })
   standardCost: number;
 
-  @Column({ type: 'decimal', precision: 18, scale: 4, default: 0, name: 'last_cost' })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 4,
+    default: 0,
+    name: 'last_cost',
+  })
   lastCost: number;
 
   // Status
   @Column({ type: 'boolean', default: true, name: 'is_active' })
   isActive: boolean;
+
+  // Ownership Tracking (P1 IFRS Fix)
+  @Column({ type: 'boolean', default: false, name: 'is_owned' })
+  isOwned: boolean;
 
   // Audit fields
   @CreateDateColumn({ name: 'created_at' })
@@ -93,4 +121,3 @@ export class InventoryItem {
   @OneToMany(() => InventoryBalance, (balance) => balance.item)
   balances: InventoryBalance[];
 }
-

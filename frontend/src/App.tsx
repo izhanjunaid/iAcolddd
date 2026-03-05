@@ -12,12 +12,30 @@ import CostCentersPage from './pages/CostCentersPage';
 import InventoryItemsPage from './pages/InventoryItemsPage';
 import InventoryTransactionsPage from './pages/InventoryTransactionsPage';
 import InventoryBalancesPage from './pages/InventoryBalancesPage';
+import InventoryValuationPage from './pages/InventoryValuationPage';
 import TaxRatesPage from './pages/TaxRatesPage';
 import InvoicesPage from './pages/InvoicesPage';
+// CreateInvoicePage removed — invoices are auto-generated from Outward Gate Pass approval
 import { BalanceSheetPage } from './pages/BalanceSheetPage';
 import { IncomeStatementPage } from './pages/IncomeStatementPage';
 import { CashFlowStatementPage } from './pages/CashFlowStatementPage';
 import { FinancialAnalysisPage } from './pages/FinancialAnalysisPage';
+import BillsList from './pages/payables/BillsList';
+import CreateBill from './pages/payables/CreateBill';
+import VendorsList from './pages/payables/VendorsList';
+import CreateVendor from './pages/payables/CreateVendor';
+import PaymentsList from './pages/payables/PaymentsList';
+import RecordPayment from './pages/payables/RecordPayment';
+import PurchaseOrdersList from './pages/procurement/PurchaseOrdersList';
+import CreatePurchaseOrder from './pages/procurement/CreatePurchaseOrder';
+import PurchaseOrderDetail from './pages/procurement/PurchaseOrderDetail';
+import GoodsReceiptNotesList from './pages/procurement/GoodsReceiptNotesList';
+import CreateGoodsReceiptNote from './pages/procurement/CreateGoodsReceiptNote';
+import ColdStoreLotsPage from './pages/cold-store/ColdStoreLotsPage';
+import InwardGatePassPage from './pages/cold-store/InwardGatePassPage';
+import OutwardGatePassPage from './pages/cold-store/OutwardGatePassPage';
+import RentalBillingPage from './pages/cold-store/RentalBillingPage';
+import ColdStoreReportsPage from './pages/cold-store/ColdStoreReportsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/Layout';
 
@@ -43,6 +61,8 @@ const UnauthorizedPage = () => (
 );
 
 import BankReconciliationPage from './pages/BankReconciliationPage';
+import FixedAssetsPage from './pages/FixedAssetsPage';
+import BudgetsPage from './pages/BudgetsPage';
 
 function App() {
   return (
@@ -158,6 +178,14 @@ function App() {
             }
           />
           <Route
+            path="/inventory/valuation"
+            element={
+              <ProtectedRoute requiredPermissions={['inventory.reports.read']}>
+                <InventoryValuationPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/tax-rates"
             element={
               <ProtectedRoute requiredPermissions={['tax:view']}>
@@ -173,6 +201,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* /invoices/create route removed — invoices auto-generated from Outward Gate Pass */}
           <Route
             path="/financial-statements/balance-sheet"
             element={
@@ -202,6 +231,153 @@ function App() {
             element={
               <ProtectedRoute requiredPermissions={['financial-statements.read']}>
                 <FinancialAnalysisPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payables/bills"
+            element={
+              <ProtectedRoute requiredPermissions={['invoices.read']}>
+                <BillsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payables/bills/create"
+            element={
+              <ProtectedRoute requiredPermissions={['invoices.create']}>
+                <CreateBill />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payables/vendors"
+            element={
+              <ProtectedRoute requiredPermissions={['vendors.read']}>
+                <VendorsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payables/vendors/create"
+            element={
+              <ProtectedRoute requiredPermissions={['vendors.create']}>
+                <CreateVendor />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payables/payments"
+            element={
+              <ProtectedRoute requiredPermissions={['ap.payment.read']}>
+                <PaymentsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payables/payments/record"
+            element={
+              <ProtectedRoute requiredPermissions={['ap.payment.create']}>
+                <RecordPayment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/procurement/purchase-orders"
+            element={
+              <ProtectedRoute requiredPermissions={['vendors.read']}>
+                <PurchaseOrdersList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/procurement/purchase-orders/:id"
+            element={
+              <ProtectedRoute requiredPermissions={['vendors.read']}>
+                <PurchaseOrderDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/procurement/purchase-orders/create"
+            element={
+              <ProtectedRoute requiredPermissions={['vendors.create']}>
+                <CreatePurchaseOrder />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/procurement/goods-receipts"
+            element={
+              <ProtectedRoute requiredPermissions={['vendors.read']}>
+                <GoodsReceiptNotesList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/procurement/goods-receipts/create"
+            element={
+              <ProtectedRoute requiredPermissions={['vendors.create']}>
+                <CreateGoodsReceiptNote />
+              </ProtectedRoute>
+            }
+          />
+          {/* Cold Store */}
+          <Route
+            path="/cold-store/lots"
+            element={
+              <ProtectedRoute>
+                <ColdStoreLotsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cold-store/inward-gate-passes"
+            element={
+              <ProtectedRoute>
+                <InwardGatePassPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cold-store/outward-gate-passes"
+            element={
+              <ProtectedRoute>
+                <OutwardGatePassPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cold-store/billing"
+            element={
+              <ProtectedRoute>
+                <RentalBillingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cold-store/reports"
+            element={
+              <ProtectedRoute>
+                <ColdStoreReportsPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Fixed Assets */}
+          <Route
+            path="/fixed-assets"
+            element={
+              <ProtectedRoute>
+                <FixedAssetsPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Budgets */}
+          <Route
+            path="/budgets"
+            element={
+              <ProtectedRoute>
+                <BudgetsPage />
               </ProtectedRoute>
             }
           />

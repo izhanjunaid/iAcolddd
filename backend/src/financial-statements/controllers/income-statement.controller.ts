@@ -1,6 +1,20 @@
-import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus, Res, Header } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Res,
+  Header,
+} from '@nestjs/common';
 import type { Response } from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../auth/guards/permissions.guard';
 import { RequirePermissions } from '../../auth/decorators/permissions.decorator';
@@ -22,7 +36,10 @@ export class IncomeStatementController {
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('financial-statements.read')
   @ApiOperation({ summary: 'Generate Income Statement (Profit & Loss)' })
-  @ApiResponse({ status: 200, description: 'Income Statement generated successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Income Statement generated successfully',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async generateIncomeStatement(@Body() dto: IncomeStatementRequestDto) {
@@ -37,13 +54,18 @@ export class IncomeStatementController {
   @ApiOperation({ summary: 'Export Income Statement as PDF' })
   @ApiResponse({ status: 200, description: 'PDF generated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async exportIncomeStatementPdf(
     @Body() dto: IncomeStatementRequestDto,
     @Res() res: Response,
   ) {
-    const incomeStatement = await this.incomeStatementService.generateIncomeStatement(dto);
-    const pdfBuffer = await this.pdfService.generateIncomeStatementPdf(incomeStatement);
+    const incomeStatement =
+      await this.incomeStatementService.generateIncomeStatement(dto);
+    const pdfBuffer =
+      await this.pdfService.generateIncomeStatementPdf(incomeStatement);
 
     res.setHeader('Content-Length', pdfBuffer.length);
     res.send(pdfBuffer);

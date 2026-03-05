@@ -6,20 +6,26 @@ export class CreateInvoicesSystem1730000000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Create enums
     await queryRunner.query(`
-      CREATE TYPE "invoice_status_enum" AS ENUM(
-        'DRAFT', 'SENT', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED'
-      )
+      DO $$ BEGIN
+        CREATE TYPE "invoice_status_enum" AS ENUM(
+          'DRAFT', 'SENT', 'PAID', 'PARTIALLY_PAID', 'OVERDUE', 'CANCELLED'
+        );
+      EXCEPTION WHEN duplicate_object THEN null;
+      END $$;
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "invoice_type_enum" AS ENUM(
-        'STORAGE', 'SERVICE', 'MIXED'
-      )
+      DO $$ BEGIN
+        CREATE TYPE "invoice_type_enum" AS ENUM(
+          'STORAGE', 'SERVICE', 'MIXED'
+        );
+      EXCEPTION WHEN duplicate_object THEN null;
+      END $$;
     `);
 
     // Create invoices table
     await queryRunner.query(`
-      CREATE TABLE "invoices" (
+      CREATE TABLE IF NOT EXISTS "invoices" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "invoice_number" VARCHAR(50) NOT NULL,
         "invoice_type" "invoice_type_enum" NOT NULL DEFAULT 'STORAGE',
@@ -75,20 +81,20 @@ export class CreateInvoicesSystem1730000000000 implements MigrationInterface {
 
     // Create index for faster queries
     await queryRunner.query(`
-      CREATE INDEX "idx_invoices_customer" ON "invoices" ("customer_id")
+      CREATE INDEX IF NOT EXISTS "idx_invoices_customer" ON "invoices" ("customer_id")
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "idx_invoices_status" ON "invoices" ("status")
+      CREATE INDEX IF NOT EXISTS "idx_invoices_status" ON "invoices" ("status")
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "idx_invoices_dates" ON "invoices" ("issue_date", "due_date")
+      CREATE INDEX IF NOT EXISTS "idx_invoices_dates" ON "invoices" ("issue_date", "due_date")
     `);
 
     // Create invoice_line_items table
     await queryRunner.query(`
-      CREATE TABLE "invoice_line_items" (
+      CREATE TABLE IF NOT EXISTS "invoice_line_items" (
         "id" UUID NOT NULL DEFAULT gen_random_uuid(),
         "invoice_id" UUID NOT NULL,
         "line_number" INTEGER NOT NULL,
@@ -106,7 +112,7 @@ export class CreateInvoicesSystem1730000000000 implements MigrationInterface {
 
     // Create index for line items
     await queryRunner.query(`
-      CREATE INDEX "idx_invoice_line_items_invoice" ON "invoice_line_items" ("invoice_id")
+      CREATE INDEX IF NOT EXISTS "idx_invoice_line_items_invoice" ON "invoice_line_items" ("invoice_id")
     `);
   }
 

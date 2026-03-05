@@ -6,4 +6,3 @@ export { QueryInventoryTransactionsDto } from './query-inventory-transactions.dt
 export { QueryInventoryBalancesDto } from './query-inventory-balances.dto';
 export { StockMovementReportDto } from './stock-movement-report.dto';
 export { InventoryValuationReportDto } from './inventory-valuation-report.dto';
-

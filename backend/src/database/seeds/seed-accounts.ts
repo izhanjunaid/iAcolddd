@@ -72,7 +72,9 @@ const seedAccounts = async () => {
          ('1-0001-0001-0003', 'Accounts Receivable', $1, 'DETAIL', 'DEBIT', 'ASSET', false, true, 0, $2, $2, NOW(), NOW())`,
       [currentAssets[0].id, adminId],
     );
-    console.log('✅ Created: Cash in Hand, Cash at Bank, Accounts Receivable (DETAIL)');
+    console.log(
+      '✅ Created: Cash in Hand, Cash at Bank, Accounts Receivable (DETAIL)',
+    );
 
     // =======================
     // LIABILITIES (2-XXXX)
@@ -176,7 +178,9 @@ const seedAccounts = async () => {
 
     console.log('\n🎉 Chart of Accounts seed completed successfully!\n');
     console.log('📊 Summary:');
-    console.log('   - 5 CONTROL accounts (Assets, Liabilities, Equity, Revenue, Expenses)');
+    console.log(
+      '   - 5 CONTROL accounts (Assets, Liabilities, Equity, Revenue, Expenses)',
+    );
     console.log('   - 3 SUB_CONTROL accounts');
     console.log('   - 11 DETAIL accounts (transactional)');
     console.log('   - Total: 19 accounts\n');
@@ -191,4 +195,3 @@ const seedAccounts = async () => {
 };
 
 seedAccounts();
-

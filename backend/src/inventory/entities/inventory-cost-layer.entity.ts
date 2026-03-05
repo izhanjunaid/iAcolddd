@@ -58,7 +58,12 @@ export class InventoryCostLayer {
   @Column({ type: 'date', name: 'receipt_date' })
   receiptDate: Date;
 
-  @Column({ type: 'varchar', length: 50, nullable: true, name: 'receipt_reference' })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+    name: 'receipt_reference',
+  })
   receiptReference: string;
 
   @Column({ type: 'uuid', nullable: true, name: 'receipt_transaction_id' })
@@ -69,10 +74,20 @@ export class InventoryCostLayer {
   receiptTransaction: InventoryTransaction;
 
   // Layer quantities and costing
-  @Column({ type: 'decimal', precision: 18, scale: 3, name: 'original_quantity' })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 3,
+    name: 'original_quantity',
+  })
   originalQuantity: number;
 
-  @Column({ type: 'decimal', precision: 18, scale: 3, name: 'remaining_quantity' })
+  @Column({
+    type: 'decimal',
+    precision: 18,
+    scale: 3,
+    name: 'remaining_quantity',
+  })
   remainingQuantity: number;
 
   @Column({ type: 'decimal', precision: 18, scale: 4, name: 'unit_cost' })
@@ -89,4 +104,3 @@ export class InventoryCostLayer {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }
-
